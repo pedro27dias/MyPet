@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+/*
+ * Visual do MyPet: claro, amigável e calmo. Cores SÓ por estes nomes (nunca #hex nas telas).
+ * Verde-água = ação principal · pêssego = carinho/destaque · vermelho suave = atraso.
+ */
+:root {
+  --bg: #fbf7f2;
+  --card: #ffffff;
+  --fg: #2d2b36;
+  --muted: #7d7887;
+  --faint: #b7b1bd;
+  --line: #efe7dd;
+
+  --primary: #3f8f7f;
+  --primary-strong: #2f7466;
+  --primary-soft: #e2f2ed;
+  --on-primary: #ffffff;
+
+  --peach: #f2a07b;
+  --peach-soft: #fdebe1;
+
+  --danger: #c4524f;
+  --danger-soft: #fdecea;
+  --warn: #b7832f;
+  --warn-soft: #fcf1dc;
+  --success: #4fae74;
+  --success-soft: #e4f5ea;
+
+  /* cor de cada tipo de cuidado (ícone + fundo) */
+  --t-remedio: #7c5cc4;
+  --t-remedio-soft: #efe9fb;
+  --t-vacina: #3f7cc8;
+  --t-vacina-soft: #e4eefb;
+  --t-vermifugo: #b7832f;
+  --t-vermifugo-soft: #fcf1dc;
+  --t-antipulgas: #2f8c7a;
+  --t-antipulgas-soft: #dff2ee;
+  --t-consulta: #c2557a;
+  --t-consulta-soft: #fce7ee;
+  --t-outro: #5f6672;
+  --t-outro-soft: #eef0f3;
+
+  --shadow-card: 0 1px 2px rgb(60 40 20 / 0.04), 0 6px 20px rgb(60 40 20 / 0.05);
+  --shadow-float: 0 10px 30px rgb(40 60 55 / 0.18);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-primary: var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-soft: var(--primary-soft);
+  --color-on-primary: var(--on-primary);
+  --color-peach: var(--peach);
+  --color-peach-soft: var(--peach-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-t-remedio: var(--t-remedio);
+  --color-t-remedio-soft: var(--t-remedio-soft);
+  --color-t-vacina: var(--t-vacina);
+  --color-t-vacina-soft: var(--t-vacina-soft);
+  --color-t-vermifugo: var(--t-vermifugo);
+  --color-t-vermifugo-soft: var(--t-vermifugo-soft);
+  --color-t-antipulgas: var(--t-antipulgas);
+  --color-t-antipulgas-soft: var(--t-antipulgas-soft);
+  --color-t-consulta: var(--t-consulta);
+  --color-t-consulta-soft: var(--t-consulta-soft);
+  --color-t-outro: var(--t-outro);
+  --color-t-outro-soft: var(--t-outro-soft);
+  --font-sans: var(--font-app);
+  --shadow-card: var(--shadow-card);
+  --shadow-float: var(--shadow-float);
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  overscroll-behavior-y: none;
+}
+
+/* Área segura do iPhone (entalhe e barra de baixo). */
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top), 0px);
+}
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 12px);
+}
+
+input,
+select,
+textarea {
+  font-size: 16px; /* evita o zoom automático do iPhone */
+}
+
+/* "Reduzir movimento" do celular desliga as animações. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
