@@ -1,13 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Nunito } from "next/font/google";
+import { DM_Sans, Fraunces } from "next/font/google";
 import { AppProvider } from "@/components/app-provider";
 import "./globals.css";
 
-/** Nunito: arredondada e amigável. */
-const appFont = Nunito({
+/** Textos e números: DM Sans (limpa). */
+const appFont = DM_Sans({
   variable: "--font-app",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
+});
+
+/** Títulos: Fraunces itálica (serifada elegante). */
+const titleFont = Fraunces({
+  variable: "--font-titulo",
+  subsets: ["latin"],
+  style: ["italic", "normal"],
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -19,14 +27,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#fbf7f2",
+  themeColor: "#fff8f9",
   colorScheme: "light",
   viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="pt-BR" className={`${appFont.variable} h-full antialiased`}>
+    <html lang="pt-BR" className={`${appFont.variable} ${titleFont.variable} h-full antialiased`}>
       <body className="min-h-full font-sans">
         <AppProvider>{children}</AppProvider>
       </body>

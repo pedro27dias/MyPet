@@ -33,7 +33,7 @@ export function Sheet({
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
           <motion.div
-            className="absolute inset-0 bg-fg/30 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-forest/35 backdrop-blur-[2px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -51,7 +51,7 @@ export function Sheet({
             <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-line sm:hidden" />
             {title && (
               <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 className="text-xl font-extrabold">{title}</h2>
+                <h2 className="titulo text-2xl">{title}</h2>
                 <button
                   type="button"
                   onClick={onClose}

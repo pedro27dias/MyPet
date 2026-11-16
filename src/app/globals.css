@@ -1,69 +1,88 @@
 @import "tailwindcss";
 
 /*
- * Visual do MyPet: claro, amigável e calmo. Cores SÓ por estes nomes (nunca #hex nas telas).
- * Verde-água = ação principal · pêssego = carinho/destaque · vermelho suave = atraso.
+ * Identidade MyPet: verde floresta + rosa claro + verde oliva, fundo off-white rosado.
+ * Cores SÓ por estes nomes (nunca #hex nas telas).
+ *   forest (verde floresta) = principal: textos importantes, barra de navegação, botões principais
+ *   pink (rosa claro)       = destaque: botão +, checks, detalhes, texto sobre o verde
+ *   olive (verde oliva)     = secundária: fundo da logo, tags, ícones
+ *   danger (coral suave)    = atraso (nunca vermelho forte)
  */
 :root {
-  --bg: #fbf7f2;
+  --bg: #fff8f9;
   --card: #ffffff;
-  --fg: #2d2b36;
-  --muted: #7d7887;
-  --faint: #b7b1bd;
-  --line: #efe7dd;
+  --fg: #2b4321;
+  --ink: #3b4436;
+  --muted: #868c80;
+  --faint: #bdbfb7;
+  --line: #f1e6e8;
 
-  --primary: #3f8f7f;
-  --primary-strong: #2f7466;
-  --primary-soft: #e2f2ed;
-  --on-primary: #ffffff;
+  --forest: #2b4321;
+  --forest-2: #3a5530;
+  --pink: #feb6c6;
+  --pink-strong: #f598ad;
+  --pink-soft: #ffe7ed;
+  --olive: #7b8450;
+  --olive-soft: #eef0e2;
 
-  --peach: #f2a07b;
-  --peach-soft: #fdebe1;
+  --danger: #d9705f;
+  --danger-soft: #fdebe6;
+  --warn: #a8822f;
+  --warn-soft: #f8efda;
 
-  --danger: #c4524f;
-  --danger-soft: #fdecea;
-  --warn: #b7832f;
-  --warn-soft: #fcf1dc;
-  --success: #4fae74;
-  --success-soft: #e4f5ea;
+  --paper: #fbf6ea;
+  --paper-line: #e9dfc8;
+  --paper-ink: #4a4636;
 
-  /* cor de cada tipo de cuidado (ícone + fundo) */
-  --t-remedio: #7c5cc4;
-  --t-remedio-soft: #efe9fb;
-  --t-vacina: #3f7cc8;
-  --t-vacina-soft: #e4eefb;
-  --t-vermifugo: #b7832f;
-  --t-vermifugo-soft: #fcf1dc;
-  --t-antipulgas: #2f8c7a;
-  --t-antipulgas-soft: #dff2ee;
-  --t-consulta: #c2557a;
-  --t-consulta-soft: #fce7ee;
-  --t-outro: #5f6672;
-  --t-outro-soft: #eef0f3;
+  /* cor de cada tipo de cuidado (ícone + fundo), em harmonia com a paleta */
+  --t-remedio: #6e5a9e;
+  --t-remedio-soft: #efeaf6;
+  --t-vacina: #2b4321;
+  --t-vacina-soft: #e5ece0;
+  --t-vermifugo: #9a7a2e;
+  --t-vermifugo-soft: #f6eedb;
+  --t-antipulgas: #5e6b35;
+  --t-antipulgas-soft: #eef0e2;
+  --t-consulta: #b4506c;
+  --t-consulta-soft: #ffe7ed;
+  --t-outro: #6b6f68;
+  --t-outro-soft: #f0f0ee;
 
-  --shadow-card: 0 1px 2px rgb(60 40 20 / 0.04), 0 6px 20px rgb(60 40 20 / 0.05);
-  --shadow-float: 0 10px 30px rgb(40 60 55 / 0.18);
+  --shadow-card: 0 1px 2px rgb(43 67 33 / 0.04), 0 8px 24px rgb(43 67 33 / 0.06);
+  --shadow-float: 0 14px 34px rgb(43 67 33 / 0.22);
 }
 
 @theme inline {
   --color-bg: var(--bg);
   --color-card: var(--card);
   --color-fg: var(--fg);
+  --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
   --color-line: var(--line);
-  --color-primary: var(--primary);
-  --color-primary-strong: var(--primary-strong);
-  --color-primary-soft: var(--primary-soft);
-  --color-on-primary: var(--on-primary);
-  --color-peach: var(--peach);
-  --color-peach-soft: var(--peach-soft);
+  --color-forest: var(--forest);
+  --color-forest-2: var(--forest-2);
+  --color-pink: var(--pink);
+  --color-pink-strong: var(--pink-strong);
+  --color-pink-soft: var(--pink-soft);
+  --color-olive: var(--olive);
+  --color-olive-soft: var(--olive-soft);
+  /* nomes usados nas telas */
+  --color-primary: var(--forest);
+  --color-primary-strong: var(--forest-2);
+  --color-primary-soft: var(--olive-soft);
+  --color-on-primary: var(--pink);
+  --color-peach: var(--pink-strong);
+  --color-peach-soft: var(--pink-soft);
+  --color-success: var(--forest);
+  --color-success-soft: var(--olive-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
   --color-warn: var(--warn);
   --color-warn-soft: var(--warn-soft);
-  --color-success: var(--success);
-  --color-success-soft: var(--success-soft);
+  --color-paper: var(--paper);
+  --color-paper-line: var(--paper-line);
+  --color-paper-ink: var(--paper-ink);
   --color-t-remedio: var(--t-remedio);
   --color-t-remedio-soft: var(--t-remedio-soft);
   --color-t-vacina: var(--t-vacina);
@@ -77,6 +96,7 @@
   --color-t-outro: var(--t-outro);
   --color-t-outro-soft: var(--t-outro-soft);
   --font-sans: var(--font-app);
+  --font-serif: var(--font-titulo);
   --shadow-card: var(--shadow-card);
   --shadow-float: var(--shadow-float);
 }
@@ -84,12 +104,39 @@
 html,
 body {
   background: var(--bg);
-  color: var(--fg);
+  color: var(--ink);
   -webkit-tap-highlight-color: transparent;
 }
 
 body {
   overscroll-behavior-y: none;
+}
+
+/* Títulos: serifada itálica (Fraunces). Ex.: "Olá, <span class="titulo">Canela</span>" */
+.titulo {
+  font-family: var(--font-titulo);
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--forest);
+}
+
+/* Logo (silhueta do cachorro correndo) pintada com a cor do texto: use com text-pink, text-forest... */
+.logo-silhueta {
+  display: inline-block;
+  background-color: currentColor;
+  aspect-ratio: 400 / 253;
+  -webkit-mask: url("/brand/silhueta.png") center / contain no-repeat;
+  mask: url("/brand/silhueta.png") center / contain no-repeat;
+}
+
+/* Papel do cartão de vacina: creme; as linhas finas são as das tabelas (e .pautado na identificação). */
+.papel {
+  background-color: var(--paper);
+  color: var(--paper-ink);
+}
+.pautado > * {
+  border-bottom: 1px solid var(--paper-line);
 }
 
 /* Área segura do iPhone (entalhe e barra de baixo). */
@@ -104,6 +151,22 @@ input,
 select,
 textarea {
   font-size: 16px; /* evita o zoom automático do iPhone */
+}
+
+/* Impressão do cartão de vacina (PDF): só o cartão aparece. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #cartao-impressao,
+  #cartao-impressao * {
+    visibility: visible;
+  }
+  #cartao-impressao {
+    position: absolute;
+    inset: 0;
+    display: block !important;
+  }
 }
 
 /* "Reduzir movimento" do celular desliga as animações. */

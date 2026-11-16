@@ -156,7 +156,7 @@ export function OnboardingFlow() {
             <p className="text-sm font-bold text-primary">
               {i + 1} de {STEPS.length}
             </p>
-            <h1 className="mt-1 text-[1.7rem] font-extrabold leading-tight">{step.title(a)}</h1>
+            <h1 className="mt-1 titulo text-[2rem] leading-tight">{step.title(a)}</h1>
             {step.hint && <p className="mt-2 text-muted">{step.hint}</p>}
             <div className="mt-6">
               <step.Body a={a} set={set} next={next} />

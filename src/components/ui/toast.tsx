@@ -44,7 +44,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 12 }}
               className={`pointer-events-auto flex max-w-md items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold shadow-float ${
-                toast.tone === "erro" ? "bg-danger text-white" : "bg-fg text-white"
+                toast.tone === "erro" ? "bg-danger text-white" : "bg-forest text-pink-soft"
               }`}
               role="status"
             >
@@ -53,7 +53,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 <button
                   key={a.label}
                   type="button"
-                  className="shrink-0 rounded-full bg-white/15 px-3 py-1.5 font-bold"
+                  className="shrink-0 rounded-full bg-pink px-3 py-1.5 font-bold text-forest"
                   onClick={() => {
                     setToast(null);
                     a.onClick();

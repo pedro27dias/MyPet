@@ -36,7 +36,7 @@ export function DoneScreen({
             <AnimatedCheck size={52} />
           </span>
         </div>
-        <motion.h1 className="mt-8 text-3xl font-extrabold" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+        <motion.h1 className="mt-8 titulo text-4xl leading-tight" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           Criamos a agenda {ofName}!
         </motion.h1>
         <motion.p className="mt-3 text-lg text-muted" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>

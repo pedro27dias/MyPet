@@ -1,19 +1,13 @@
-/** Logo (pegada) para usar nas telas. */
-export function LogoMark({ size = 40 }: { size?: number }) {
+/** Logo: cachorro correndo (rosa) num quadrado arredondado verde-oliva. `plain` = só a silhueta, na cor do texto. */
+export function LogoMark({ size = 40, plain = false, className = "" }: { size?: number; plain?: boolean; className?: string }) {
+  if (plain) return <span className={`logo-silhueta ${className}`} style={{ width: size }} aria-hidden />;
   return (
     <span
-      className="inline-grid place-items-center bg-primary"
+      className={`inline-grid shrink-0 place-items-center bg-olive text-pink ${className}`}
       style={{ width: size, height: size, borderRadius: size * 0.28 }}
       aria-hidden
     >
-      <svg width={size * 0.62} height={size * 0.62} viewBox="0 0 100 100">
-        <ellipse cx="50" cy="66" rx="22" ry="19" fill="white" />
-        <ellipse cx="22" cy="42" rx="9" ry="11" fill="white" />
-        <ellipse cx="38" cy="24" rx="9" ry="11.5" fill="white" />
-        <ellipse cx="62" cy="24" rx="9" ry="11.5" fill="white" />
-        <ellipse cx="78" cy="42" rx="9" ry="11" fill="white" />
-        <circle cx="50" cy="66" r="6" fill="var(--peach)" />
-      </svg>
+      <span className="logo-silhueta" style={{ width: size * 0.66 }} />
     </span>
   );
 }

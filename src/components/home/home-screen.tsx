@@ -11,6 +11,7 @@ import { CareIcon } from "../care/care-meta";
 import { CareFormSheet } from "../care/care-form";
 import { PetAvatar } from "../shared/pet-avatar";
 import { TabShell } from "../shell/tab-shell";
+import { LogoMark } from "../shell/logo-mark";
 import { TaskRow } from "./task-row";
 import { AlreadyDoneSheet, EditTimeSheet, TaskMenuSheet } from "./task-sheets";
 import { useTaskActions } from "./use-task-actions";
@@ -52,23 +53,32 @@ export function HomeScreen() {
   return (
     <TabShell
       title={
-        <header className="flex items-center justify-between gap-4 pb-5 pt-4">
-          <div className="min-w-0">
-            <p className="font-bold text-muted">
-              {greeting(now)}
-              {first && first !== "Você" ? `, ${first}` : ""}!
-            </p>
-            <h1 className="truncate text-[1.75rem] font-extrabold leading-tight">
-              {!dataReady
-                ? `Cuidados de ${pet.name}`
-                : overdue.length
-                  ? `${overdue.length} ${overdue.length === 1 ? "coisa atrasada" : "coisas atrasadas"}`
-                  : pending
-                    ? `${pending} ${pending === 1 ? "cuidado" : "cuidados"} ${isToday ? "hoje" : "neste dia"}`
-                    : `${pet.name} está em dia`}
-            </h1>
+        <header className="pb-6 pt-4">
+          <div className="flex items-center gap-2 text-forest">
+            <LogoMark plain size={40} />
+            <span className="titulo text-xl">MyPet</span>
           </div>
-          <PetAvatar url={pet.photoUrl} size={60} ring />
+          <div className="mt-5 flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p className="font-semibold text-muted">
+                {greeting(now)}
+                {first && first !== "Você" ? `, ${first}` : ""}
+              </p>
+              <h1 className="truncate text-[2rem] font-bold leading-tight text-forest">
+                Olá, <span className="titulo">{pet.name}</span>
+              </h1>
+              <p className={`mt-0.5 font-semibold ${overdue.length ? "text-danger" : "text-olive"}`}>
+                {!dataReady
+                  ? " "
+                  : overdue.length
+                    ? `${overdue.length} ${overdue.length === 1 ? "coisa atrasada" : "coisas atrasadas"}`
+                    : pending
+                      ? `${pending} ${pending === 1 ? "cuidado" : "cuidados"} ${isToday ? "para hoje" : "neste dia"}`
+                      : "Tudo em dia por aqui"}
+              </p>
+            </div>
+            <PetAvatar url={pet.photoUrl} size={72} ring />
+          </div>
         </header>
       }
     >
@@ -78,7 +88,7 @@ export function HomeScreen() {
         <div className="space-y-6">
           {overdue.length > 0 && (
             <section>
-              <h2 className="mb-2 px-1 text-sm font-extrabold uppercase tracking-wide text-danger">Atrasados</h2>
+              <h2 className="mb-2 px-1 titulo text-xl !text-danger">Atrasados</h2>
               <ul className="space-y-2">
                 <AnimatePresence initial={false}>{overdue.map((o) => row(o, true))}</AnimatePresence>
               </ul>
@@ -88,7 +98,7 @@ export function HomeScreen() {
           <WeekStrip cares={cares} records={records} selected={selected} onSelect={setSelected} />
 
           <section>
-            <h2 className="mb-2 px-1 text-sm font-extrabold uppercase tracking-wide text-muted">
+            <h2 className="mb-2 px-1 titulo text-xl">
               {isToday ? "Hoje" : `${weekdayLong(selected)}, ${fmtDate(selected)}`}
             </h2>
             {day.length ? (
@@ -142,12 +152,12 @@ function NextAppointment({ occ, onOpen }: { occ: Occurrence; onOpen: () => void 
   const d = daysBetween(new Date(), occ.due);
   return (
     <section>
-      <h2 className="mb-2 px-1 text-sm font-extrabold uppercase tracking-wide text-muted">Próximo compromisso</h2>
-      <button type="button" onClick={onOpen} className="flex w-full items-center gap-4 rounded-3xl bg-fg p-4 text-left text-white shadow-float active:scale-[0.98]">
+      <h2 className="mb-2 px-1 titulo text-xl">Próximo compromisso</h2>
+      <button type="button" onClick={onOpen} className="flex w-full items-center gap-4 rounded-3xl bg-forest p-4 text-left text-pink-soft shadow-float active:scale-[0.98]">
         <CareIcon type={occ.care.type} size={52} />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-lg font-extrabold">{occ.care.title}</span>
-          <span className="block truncate text-sm text-white/70">
+          <span className="block truncate text-sm text-pink-soft/70">
             {fmtDate(occ.due)} às {fmtTimeShort(occ.due)}
             {occ.care.detail ? ` · ${occ.care.detail}` : ""}
           </span>

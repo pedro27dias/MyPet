@@ -82,12 +82,12 @@ export function PetScreen() {
       <div className="flex flex-col items-center pt-6 text-center">
         <button type="button" onClick={() => fileRef.current?.click()} className="relative" aria-label="Trocar foto" disabled={photoBusy}>
           <PetAvatar url={pet.photoUrl} size={112} ring />
-          <span className="absolute bottom-0 right-0 grid size-9 place-items-center rounded-full bg-fg text-white ring-4 ring-bg">
+          <span className="absolute bottom-0 right-0 grid size-9 place-items-center rounded-full bg-forest text-pink ring-4 ring-bg">
             <Camera size={16} />
           </span>
         </button>
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => changePhoto(e.target.files?.[0])} />
-        <h1 className="mt-4 text-3xl font-extrabold">{pet.name}</h1>
+        <h1 className="mt-4 titulo text-4xl">{pet.name}</h1>
         {pet.breed && <p className="text-muted">{pet.breed}</p>}
       </div>
 
@@ -106,7 +106,7 @@ export function PetScreen() {
       </section>
       <p className="mt-2 px-2 text-sm text-faint">Editar o perfil e registrar gastos chegam na próxima etapa.</p>
 
-      <h2 className="mb-2 mt-8 px-1 text-sm font-extrabold uppercase tracking-wide text-muted">Tutores</h2>
+      <h2 className="mb-2 mt-8 px-1 titulo text-xl">Tutores</h2>
       <section className="space-y-2">
         {tutors.map((t) => (
           <div key={t.userId} className="flex items-center gap-3 rounded-3xl bg-card p-3 shadow-card">

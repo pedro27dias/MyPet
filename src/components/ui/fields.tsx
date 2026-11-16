@@ -241,7 +241,7 @@ export function Pills<T extends string>({
           aria-pressed={value === o.value}
           onClick={() => onChange(o.value)}
           className={`h-10 rounded-full px-4 text-sm font-bold transition active:scale-95 ${
-            value === o.value ? "bg-fg text-white" : "bg-card text-fg ring-2 ring-line"
+            value === o.value ? "bg-forest text-pink" : "bg-card text-fg ring-2 ring-line"
           }`}
         >
           {o.label}

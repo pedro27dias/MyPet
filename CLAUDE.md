@@ -10,7 +10,8 @@ O dono **não programa**: explique em português simples, sem termos técnicos, 
 | # | Etapa | Situação |
 |---|---|---|
 | 1 | Banco de dados, login (e-mail/Google), cadastro do cachorro (16 perguntas + agenda sugerida), aba Início com "Feito ✓" | ✅ (falta ligar o Supabase de verdade, ver "Ligar o banco") |
-| 2 | Aba Cuidados (lista por tipo, próxima data, histórico), editar perfil do pet | ⬜ |
+| 2 | Identidade visual nova (verde floresta + rosa) e aba Cuidados com Cartão de Vacina | ✅ (rodar `002_cartao_vacina.sql`) |
+| 2b | Editar perfil do pet | ⬜ |
 | 3 | Aba Guia (fases: filhote, adulto, idoso) | ⬜ |
 | 4 | Gastos (aba Pet + botão +) | ⬜ |
 | 5 | Notificações push (no horário, para todos os tutores; aviso quando alguém conclui) + PWA instalável completa | ⬜ |
@@ -31,7 +32,7 @@ No PowerShell deste Windows use `npm.cmd`/`npx.cmd`.
 
 ## Ligar o banco (Supabase)
 1. Criar projeto "MyPet" no Supabase (região São Paulo). ⚠️ Plano grátis = 2 projetos ativos (já há FitFlow e MyFinance): pausar um ou usar outra conta.
-2. SQL Editor → rodar `supabase/migrations/001_inicio.sql` (uma vez).
+2. SQL Editor → rodar `supabase/migrations/001_inicio.sql` e depois `002_cartao_vacina.sql` (cada um uma vez).
 3. Copiar `.env.example` para `.env.local` e colar URL + chave anon (Project Settings → API Keys).
 4. Authentication → URL Configuration: Site URL `http://localhost:3002` (depois o endereço da Vercel) e Redirect URLs com `http://localhost:3002/**`.
 5. Google: Authentication → Providers → Google (precisa de um "OAuth client" no Google Cloud; redirect = `https://<projeto>.supabase.co/auth/v1/callback`).
@@ -58,15 +59,25 @@ No PowerShell deste Windows use `npm.cmd`/`npx.cmd`.
 ## Telas
 - **Início** (`components/home/`): saudação + foto, Atrasados (vermelho suave), faixa da semana (seg–dom, bolinhas), lista do dia com botão grande "Feito ✓", Próximo compromisso (consulta/vacina). Menu de cada tarefa: adiar, pular (motivo), editar, mudar horário, desfazer, histórico.
 - **Botão +** (`components/care/add-menu.tsx` + `care-form.tsx`): remédio, vacina, vermífugo, antipulgas, consulta/cirurgia/exame, lembrete livre. Gasto = etapa 4. "Parar este lembrete" desliga (`ativo = false`), nunca apaga.
-- **Pet** (provisória): perfil, trocar foto, tutores, convidar, outro cachorro, sair. **Cuidados** e **Guia**: "Chega na próxima etapa".
+- **Pet** (provisória): perfil, trocar foto, tutores, convidar, outro cachorro, sair. **Guia**: "Chega na próxima etapa".
 - Seletor de pet no topo só aparece com 2+ cachorros.
 - `/convite/CODIGO`: aceitar convite (depois do login).
 
-## Visual
-- Claro, amigável, cores suaves. Cores **só** pelos nomes em `src/app/globals.css` (nunca `#hex` nas telas): `primary` (verde-água, ação), `peach` (carinho/destaque), `danger-soft` (atraso), `success` (feito), uma cor por tipo de cuidado (`t-remedio`...; ícone e cor em `components/care/care-meta.tsx`).
-- Fonte Nunito. Cards `rounded-3xl bg-card shadow-card`. Botões em pílula (`components/ui/button.tsx`). Janelas de baixo: `Sheet`. Avisos: `useToast()`.
-- Animações com `motion` (curtas): troca de tela, perguntas deslizando, check que se desenha (`AnimatedCheck`). "Reduzir movimento" desliga.
+## Visual (identidade aprovada em 16/11/2026)
+- Cores **só** pelos nomes em `src/app/globals.css` (nunca `#hex` nas telas): **forest** `#2B4321` = principal (textos importantes, barra de navegação, botões principais; `primary` aponta para ela), **pink** `#FEB6C6` = destaque (botão +, checks, texto sobre o verde; `on-primary`), **olive** `#7B8450` = secundária (fundo da logo, tags, ícones), fundo `#FFF8F9`, cards brancos, atraso = coral suave (`danger`). Uma cor suave por tipo de cuidado (`t-remedio`...; ícone e cor em `components/care/care-meta.tsx`).
+- Fontes: títulos **Fraunces itálica** (classe `titulo`), textos e números **DM Sans**. Misturar: `Olá, <span className="titulo">Fifu</span>`.
+- Logo: cachorro correndo. `LogoMark` (quadrado oliva + cachorro rosa) ou `LogoMark plain` (só a silhueta, na cor do texto: `text-pink`, `text-forest`; a classe `logo-silhueta` usa `public/brand/silhueta.png` como máscara). Ícones do app em `public/icons/` e `src/app/icon.png` / `apple-icon.png`, gerados de `public/brand/logo-quadrada.png` por `node scripts/gerar-imagens.cjs`. Foto de exemplo: Canela (`public/exemplo/`, na tela de boas-vindas).
+- Cards `rounded-3xl bg-card shadow-card`, muito respiro. Botões em pílula (`components/ui/button.tsx`). Janelas de baixo: `Sheet`. Avisos: `useToast()`.
+- Barra de navegação: `components/shell/tab-nav.tsx`, no layout `app/(abas)/layout.tsx` (fica fixa entre as abas). Pílula verde flutuante, ícones rosa, bolha rosa que desliza para a aba ativa, botão + rosa no meio (gira ao abrir).
+- Animações com `motion` (curtas): troca de tela, perguntas deslizando, check que se desenha (`AnimatedCheck`), cartão de vacina. "Reduzir movimento" desliga.
 - Testar sempre em 375 px sem rolagem lateral.
+
+## Cuidados e Cartão de Vacina
+- Aba Cuidados (`components/cuidados/`): Cartão de Vacina no topo + lembretes agrupados por tipo (próxima data, frequência, última vez). Tocar abre detalhes, editar e histórico. Carrega o histórico inteiro do pet.
+- Cartão (`vaccine-card.tsx`, dados em `lib/vaccine-card.ts`): card fechado (capa verde) → amplia (layoutId `cartao-vacina`) → capa vira em 3D e mostra páginas de papel: Identificação, Vacinas, Vermífugo, Pulgas e carrapatos (6 linhas por página; deslizar ou setas). Fechar faz o caminho de volta (fases `abrindo/aberto/fechando` por tempo fixo).
+- Entra sozinho no cartão todo registro `feito` de vacina/vermífugo/antipulgas (cadastro, botão +, "Feito ✓" ou "Adicionar registro"). Próxima dose = `proxima_em` do lembrete, na aplicação mais recente. Lembrete sem aplicação aparece como "a aplicar".
+- "Adicionar registro" (`add-record-sheet.tsx`, `repo.addRecord`): tipo, qual (ou nova), data, próxima dose (só anda para a frente), clínica (`registros.clinica`), foto da etiqueta (`registros.lote_foto`, Storage `fotos-pets/<pet>/etiqueta-...`).
+- Compartilhar: imagem PNG desenhada em canvas (`cardImage`) ou PDF pela impressão do navegador (`#cartao-impressao`, regras `@media print`).
 
 ## Organização
 - Datas em texto `AAAA-MM-DD` com `parseDate()`; horários locais do celular (`lib/dates.ts`).

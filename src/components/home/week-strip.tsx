@@ -40,14 +40,14 @@ export function WeekStrip({
             className="relative flex flex-col items-center gap-1 rounded-2xl py-2"
           >
             {isSel && (
-              <motion.span layoutId="week-sel" className="absolute inset-0 rounded-2xl bg-fg" transition={{ type: "spring", damping: 30, stiffness: 400 }} />
+              <motion.span layoutId="week-sel" className="absolute inset-0 rounded-2xl bg-forest" transition={{ type: "spring", damping: 30, stiffness: 400 }} />
             )}
-            <span className={`relative text-xs font-bold ${isSel ? "text-white/70" : isToday ? "text-primary" : "text-muted"}`}>{weekdayShort(d)}</span>
-            <span className={`relative text-lg font-extrabold ${isSel ? "text-white" : ""}`}>{d.getDate()}</span>
+            <span className={`relative text-xs font-bold ${isSel ? "text-pink/80" : isToday ? "text-primary" : "text-muted"}`}>{weekdayShort(d)}</span>
+            <span className={`relative text-lg font-extrabold ${isSel ? "text-pink" : "text-fg"}`}>{d.getDate()}</span>
             <span className="relative flex h-2 items-center gap-0.5">
               {occ.length > 0 && (
                 <span
-                  className={`size-2 rounded-full ${late ? "bg-danger" : allDone ? "bg-success" : isSel ? "bg-white" : "bg-peach"}`}
+                  className={`size-2 rounded-full ${late ? "bg-danger" : allDone ? "bg-pink" : isSel ? "bg-pink-soft" : "bg-olive"}`}
                 />
               )}
             </span>

@@ -185,6 +185,31 @@ export const demoRepo: Repo = {
     });
     save(db);
   },
+  async addRecord({ care, at, clinic, photo, next }) {
+    const label = photo ? await blobToDataUrl(photo) : null;
+    const db = load();
+    db.records.push({
+      id: newId(),
+      careId: care.id,
+      petId: care.petId,
+      occurrence: at,
+      status: "feito",
+      doneAt: at,
+      snoozedTo: null,
+      reason: null,
+      by: USER.id,
+      createdAt: new Date().toISOString(),
+      clinic: clinic ?? null,
+      labelPhoto: label,
+    });
+    const c = db.cares.find((x) => x.id === care.id);
+    if (c && next) c.nextAt = next;
+    save(db);
+  },
+  async photoUrls(paths) {
+    // no modo demonstração a "foto" já é a própria imagem
+    return Object.fromEntries(paths.map((p) => [p, p]));
+  },
   async updateRecordTime(recordId, doneAt) {
     const db = load();
     const r = db.records.find((x) => x.id === recordId);

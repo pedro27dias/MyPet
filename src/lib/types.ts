@@ -76,6 +76,10 @@ export interface CareRecord {
   snoozedTo: string | null;
   reason: string | null;
   by: string | null;
+  /** Onde foi feito (clínica/veterinário) — cartão de vacina. */
+  clinic?: string | null;
+  /** Foto da etiqueta/lote: caminho no Storage (ou a imagem, no modo demonstração). */
+  labelPhoto?: string | null;
   createdAt: string;
 }
 

@@ -70,7 +70,7 @@ export function TaskRow({
 
       {resolved ? (
         <button type="button" onClick={onMenu} aria-label="Opções" className="grid size-12 place-items-center">
-          <span className={`grid size-10 place-items-center rounded-full ${done ? "bg-success text-white" : "bg-line text-muted"}`}>
+          <span className={`grid size-10 place-items-center rounded-full ${done ? "bg-pink text-forest" : "bg-line text-muted"}`}>
             {done ? <Check size={22} strokeWidth={3} /> : <span className="text-xs font-bold">—</span>}
           </span>
         </button>
@@ -83,7 +83,7 @@ export function TaskRow({
             type="button"
             onClick={onDone}
             disabled={busy}
-            className="relative flex h-12 items-center gap-1.5 overflow-hidden rounded-full bg-primary px-4 font-extrabold text-on-primary shadow-[0_4px_12px_rgb(63_143_127/0.3)] transition active:scale-90 disabled:opacity-80"
+            className="relative flex h-12 items-center gap-1.5 overflow-hidden rounded-full bg-primary px-4 font-extrabold text-on-primary shadow-[0_4px_12px_rgb(43_67_33/0.28)] transition active:scale-90 disabled:opacity-80"
           >
             <AnimatePresence mode="wait" initial={false}>
               {busy ? (

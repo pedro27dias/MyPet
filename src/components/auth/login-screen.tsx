@@ -69,7 +69,7 @@ export function LoginScreen({ repo, onModeChange }: { repo: Repo; onModeChange: 
         <div className="grid size-20 place-items-center rounded-full bg-primary-soft text-primary">
           <Mail size={36} />
         </div>
-        <h1 className="mt-6 text-2xl font-extrabold">Confira seu e-mail</h1>
+        <h1 className="mt-6 titulo text-3xl">Confira seu e-mail</h1>
         <p className="mt-2 text-muted">
           Mandamos um link para <b className="text-fg">{email}</b>. Toque nele para ativar sua conta e voltar para o app.
         </p>
@@ -84,9 +84,9 @@ export function LoginScreen({ repo, onModeChange }: { repo: Repo; onModeChange: 
     <main className="pt-safe mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-10">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center">
         <div className="flex justify-center">
-          <LogoMark size={72} />
+          <LogoMark size={96} />
         </div>
-        <h1 className="mt-5 text-3xl font-extrabold">MyPet</h1>
+        <h1 className="mt-4 titulo text-5xl">MyPet</h1>
         <p className="mt-1 text-muted">O que fazer e quando, sem precisar lembrar.</p>
       </motion.div>
 

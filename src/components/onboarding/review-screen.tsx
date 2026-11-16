@@ -57,7 +57,7 @@ export function ReviewScreen({
       <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-2 flex items-center gap-4 rounded-3xl bg-card p-4 shadow-card">
         <PetAvatar url={a.photoPreview} size={72} />
         <div className="min-w-0">
-          <h1 className="truncate text-2xl font-extrabold">{a.name.trim() || "Meu cachorro"}</h1>
+          <h1 className="truncate titulo text-3xl">{a.name.trim() || "Meu cachorro"}</h1>
           <div className="mt-1 flex flex-wrap gap-1.5">
             {chips.length ? (
               chips.map((c) => (
@@ -72,7 +72,7 @@ export function ReviewScreen({
         </div>
       </motion.section>
 
-      <h2 className="mt-8 text-xl font-extrabold">Agenda sugerida para {name}</h2>
+      <h2 className="mt-8 titulo text-2xl">Agenda sugerida para {name}</h2>
       <p className="mt-1 text-sm text-muted">Baseada nas respostas e na idade. Toque para ajustar ou desmarque o que não quiser.</p>
 
       <div className="mt-4 space-y-3">

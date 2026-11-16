@@ -41,7 +41,7 @@ export function AcceptInvite({ code }: { code: string }) {
         <p className="mt-6 text-muted">Abrindo convite...</p>
       ) : preview ? (
         <>
-          <h1 className="mt-6 text-2xl font-extrabold">Cuidar de {preview.pet}</h1>
+          <h1 className="mt-6 titulo text-3xl">Cuidar de {preview.pet}</h1>
           <p className="mt-2 text-muted">
             {preview.from ? `${preview.from} convidou você` : "Você foi convidado"} para acompanhar os cuidados de {preview.pet}.
           </p>
@@ -53,7 +53,7 @@ export function AcceptInvite({ code }: { code: string }) {
         </>
       ) : (
         <>
-          <h1 className="mt-6 text-2xl font-extrabold">Convite não encontrado</h1>
+          <h1 className="mt-6 titulo text-3xl">Convite não encontrado</h1>
           <p className="mt-2 text-muted">{error ?? `Confira o código ${code.toUpperCase()}.`}</p>
         </>
       )}

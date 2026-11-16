@@ -124,6 +124,8 @@ function recordFromRow(r: Row): CareRecord {
     snoozedTo: (r.adiado_para as string) ?? null,
     reason: (r.motivo as string) ?? null,
     by: (r.por as string) ?? null,
+    clinic: (r.clinica as string) ?? null,
+    labelPhoto: (r.lote_foto as string) ?? null,
     createdAt: r.criado_em as string,
   };
 }
@@ -195,7 +197,12 @@ export const cloudRepo: Repo = {
   async createPet(pet, cares, history) {
     const { data, error } = await supabase().rpc("criar_pet", {
       p: petToRow(pet),
-      p_cuidados: cares.map(careToRow),
+      // o id do pet ainda não existe: o banco preenche (o app manda um provisório)
+      p_cuidados: cares.map((c) => {
+        const row = careToRow(c);
+        delete row.pet_id;
+        return row;
+      }),
       p_registros: history.map((h) => ({ cuidado_id: h.careId, ocorrencia: h.at, feito_em: h.at })),
     });
     if (error) fail(error);
@@ -262,6 +269,35 @@ export const cloudRepo: Repo = {
         .insert({ cuidado_id: care.id, pet_id: care.petId, ocorrencia: occurrence, status: "adiado", adiado_para: until, por: me })
         .select("id"),
     );
+  },
+
+  async addRecord({ care, at, clinic, photo, next }) {
+    const me = await uid();
+    let path: string | null = null;
+    if (photo) {
+      path = `${care.petId}/etiqueta-${Date.now()}.jpg`;
+      const up = await supabase().storage.from(BUCKET).upload(path, photo, { contentType: "image/jpeg" });
+      if (up.error) fail(up.error);
+    }
+    const row: Row = { cuidado_id: care.id, pet_id: care.petId, ocorrencia: at, status: "feito", feito_em: at, por: me };
+    // só manda as colunas novas quando preenchidas (funciona mesmo antes do SQL 002)
+    if (clinic) row.clinica = clinic;
+    if (path) row.lote_foto = path;
+    const res = await supabase().from("registros").insert(row).select("id");
+    if (res.error && /clinica|lote_foto/.test(res.error.message)) {
+      throw new Error("Falta atualizar o banco: rode o arquivo 002_cartao_vacina.sql no Supabase.");
+    }
+    expectRows(res);
+    if (next) await cloudRepo.saveCare({ ...care, nextAt: next });
+  },
+
+  async photoUrls(paths) {
+    const out: Record<string, string> = {};
+    const list = paths.filter(Boolean);
+    if (!list.length) return out;
+    const signed = await supabase().storage.from(BUCKET).createSignedUrls(list, 60 * 60);
+    for (const s of signed.data ?? []) if (s.path && s.signedUrl) out[s.path] = s.signedUrl;
+    return out;
   },
 
   async updateRecordTime(recordId, doneAt) {

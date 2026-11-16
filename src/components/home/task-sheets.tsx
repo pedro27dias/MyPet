@@ -161,7 +161,7 @@ function MenuItem({ icon, label, hint, onClick }: { icon: React.ReactNode; label
 }
 
 /** Últimos registros deste cuidado (data, hora e quem fez). */
-function History({ careId }: { careId: string }) {
+export function History({ careId }: { careId: string }) {
   const { repo, pet, nameOf } = useApp();
   const [list, setList] = useState<CareRecord[] | null>(null);
   const [error, setError] = useState<string | null>(null);
