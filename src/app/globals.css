@@ -147,10 +147,13 @@ body {
   padding-bottom: max(env(safe-area-inset-bottom), 12px);
 }
 
-input,
-select,
-textarea {
-  font-size: 16px; /* evita o zoom automático do iPhone */
+@layer base {
+  /* evita o zoom automático do iPhone (em "base" para as classes text-* das telas valerem) */
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }
 
 /* Impressão do cartão de vacina (PDF): só o cartão aparece. */

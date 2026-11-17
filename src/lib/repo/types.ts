@@ -1,4 +1,4 @@
-import type { AppUser, Care, CareRecord, CompleteResult, InvitePreview, Pet, PetFields, Tutor } from "../types";
+import type { AppUser, Care, CareRecord, CompleteResult, Expense, InvitePreview, Pet, PetFields, Tutor } from "../types";
 
 /**
  * Tudo que o app lê e grava passa por aqui. Duas versões com o mesmo jeito de usar:
@@ -45,6 +45,13 @@ export interface Repo {
   /** Links para mostrar fotos guardadas (etiquetas). */
   photoUrls(paths: string[]): Promise<Record<string, string>>;
   undo(recordId: string): Promise<void>;
+
+  // Gastos
+  /** Gastos do pet entre duas datas (AAAA-MM-DD, inclusive). */
+  listExpenses(petId: string, from: string, to: string): Promise<Expense[]>;
+  /** Cria ou corrige um gasto. */
+  saveExpense(e: Expense): Promise<void>;
+  deleteExpense(id: string): Promise<void>;
 
   // Tutores
   listTutors(petId: string): Promise<Tutor[]>;

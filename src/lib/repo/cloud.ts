@@ -1,6 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { friendlyError, supabase } from "../supabase";
-import type { AppUser, Care, CareRecord, Pet, PetFields, RecordStatus, Role } from "../types";
+import type { AppUser, Care, CareRecord, Expense, Pet, PetFields, RecordStatus, Role } from "../types";
 import type { Repo } from "./types";
 
 /* Versão "nuvem": Supabase. Nomes do banco em português ↔ tipos do app em inglês. */
@@ -309,6 +309,47 @@ export const cloudRepo: Repo = {
     if (error) fail(error);
   },
 
+  async listExpenses(petId, from, to) {
+    const res = await supabase()
+      .from("gastos")
+      .select("*")
+      .eq("pet_id", petId)
+      .gte("data", from)
+      .lte("data", to)
+      .order("data", { ascending: false })
+      .order("criado_em", { ascending: false });
+    if (res.error) {
+      if (/gastos/.test(res.error.message) && /exist|find|schema/i.test(res.error.message)) {
+        throw new Error("Falta atualizar o banco: rode o arquivo 003_gastos.sql no Supabase.");
+      }
+      fail(res.error);
+    }
+    return (res.data ?? []).map((r) => ({
+      id: r.id as string,
+      petId: r.pet_id as string,
+      amount: Number(r.valor),
+      category: r.categoria as Expense["category"],
+      date: r.data as string,
+      paidBy: (r.pago_por as string) ?? null,
+      note: (r.descricao as string) ?? null,
+    }));
+  },
+
+  async saveExpense(e) {
+    const res = await supabase()
+      .from("gastos")
+      .upsert({ id: e.id, pet_id: e.petId, valor: e.amount, categoria: e.category, data: e.date, pago_por: e.paidBy, descricao: e.note })
+      .select("id");
+    if (res.error && /gastos/.test(res.error.message)) {
+      throw new Error("Falta atualizar o banco: rode o arquivo 003_gastos.sql no Supabase.");
+    }
+    expectRows(res);
+  },
+
+  async deleteExpense(id) {
+    expectRows(await supabase().from("gastos").delete().eq("id", id).select("id"));
+  },
+
   async listTutors(petId) {
     const res = await supabase().from("tutores").select("user_id, papel").eq("pet_id", petId).order("criado_em");
     if (res.error) fail(res.error);
@@ -350,6 +391,7 @@ export const cloudRepo: Repo = {
       .channel(`pet-${petId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "registros", filter: `pet_id=eq.${petId}` }, onChange)
       .on("postgres_changes", { event: "*", schema: "public", table: "cuidados", filter: `pet_id=eq.${petId}` }, onChange)
+      .on("postgres_changes", { event: "*", schema: "public", table: "gastos", filter: `pet_id=eq.${petId}` }, onChange)
       .subscribe();
     return () => {
       supabase().removeChannel(channel);

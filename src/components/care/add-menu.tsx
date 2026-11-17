@@ -6,7 +6,7 @@ import { useState } from "react";
 import type { Care, CareType } from "@/lib/types";
 import { useApp } from "../app-provider";
 import { Sheet } from "../ui/sheet";
-import { useToast } from "../ui/toast";
+import { ExpenseSheet } from "../gastos/expense-form";
 import { CARE_META } from "./care-meta";
 import { CareFormSheet, newCareFor } from "./care-form";
 
@@ -22,8 +22,8 @@ const OPTIONS: { type: CareType; label: string }[] = [
 /** Botão "+": escolhe o que adicionar. */
 export function AddMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { pet } = useApp();
-  const toast = useToast();
   const [draft, setDraft] = useState<Care | null>(null);
+  const [expenseOpen, setExpenseOpen] = useState(false);
 
   return (
     <>
@@ -50,18 +50,26 @@ export function AddMenu({ open, onClose }: { open: boolean; onClose: () => void 
               </motion.button>
             );
           })}
-          <button
+          <motion.button
             type="button"
-            onClick={() => toast("Gastos chegam na próxima etapa.", { tone: "info" })}
-            className="col-span-2 flex items-center gap-3 rounded-3xl bg-bg p-4 text-left active:scale-[0.98]"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.03 * OPTIONS.length }}
+            onClick={() => {
+              if (!pet) return;
+              onClose();
+              setExpenseOpen(true);
+            }}
+            className="col-span-2 flex items-center gap-3 rounded-3xl bg-forest p-4 text-left active:scale-[0.98]"
           >
-            <Wallet size={26} className="text-muted" />
-            <span className="font-extrabold">Gasto</span>
-            <span className="ml-auto text-sm text-muted">em breve</span>
-          </button>
+            <Wallet size={26} className="text-pink" />
+            <span className="font-extrabold text-pink">Gasto</span>
+            <span className="ml-auto text-sm text-pink/70">ração, vet, banho...</span>
+          </motion.button>
         </div>
       </Sheet>
       <CareFormSheet care={draft} open={!!draft} onClose={() => setDraft(null)} />
+      <ExpenseSheet open={expenseOpen} onClose={() => setExpenseOpen(false)} />
     </>
   );
 }

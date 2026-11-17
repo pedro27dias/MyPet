@@ -104,3 +104,18 @@ export interface InvitePreview {
   from: string | null;
   valid: boolean;
 }
+
+export type ExpenseCategory = "racao" | "vet" | "remedio" | "banho" | "outros";
+
+export interface Expense {
+  id: string;
+  petId: string;
+  /** Em reais (ex.: 89.9) */
+  amount: number;
+  category: ExpenseCategory;
+  /** AAAA-MM-DD */
+  date: string;
+  /** Quem pagou (id do tutor) */
+  paidBy: string | null;
+  note: string | null;
+}

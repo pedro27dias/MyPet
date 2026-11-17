@@ -1,4 +1,4 @@
-import type { AppUser, Care, CareRecord, Pet, PetFields, Tutor } from "../types";
+import type { AppUser, Care, CareRecord, Expense, Pet, PetFields, Tutor } from "../types";
 import { newId } from "../onboarding";
 import type { Repo } from "./types";
 
@@ -15,6 +15,7 @@ interface DemoDb {
   pets: (Omit<Pet, "role" | "photoUrl"> & { photoData: string | null })[];
   cares: Care[];
   records: CareRecord[];
+  expenses?: Expense[];
 }
 
 function load(): DemoDb {
@@ -228,6 +229,27 @@ export const demoRepo: Repo = {
     if (c && (c.freq === "meses" || c.freq === "anos") && !stillDone && (!c.nextAt || new Date(c.nextAt).getTime() > t)) {
       c.nextAt = r.occurrence;
     }
+    save(db);
+  },
+
+  async listExpenses(petId, from, to) {
+    return (load().expenses ?? [])
+      .filter((e) => e.petId === petId && e.date >= from && e.date <= to)
+      .sort((a, b) => b.date.localeCompare(a.date));
+  },
+  async saveExpense(e) {
+    await wait();
+    const db = load();
+    const list = db.expenses ?? [];
+    const i = list.findIndex((x) => x.id === e.id);
+    if (i >= 0) list[i] = e;
+    else list.push(e);
+    db.expenses = list;
+    save(db);
+  },
+  async deleteExpense(id) {
+    const db = load();
+    db.expenses = (db.expenses ?? []).filter((e) => e.id !== id);
     save(db);
   },
 

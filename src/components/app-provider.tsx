@@ -29,6 +29,8 @@ interface AppCtx {
   reloadData: () => Promise<void>;
   /** Nome de quem fez ("Você" para a própria pessoa). */
   nameOf: (userId: string | null) => string;
+  /** Muda toda vez que os dados do pet são recarregados (para telas que buscam outras coisas, como os gastos). */
+  tick: number;
 }
 
 const Ctx = createContext<AppCtx | null>(null);
@@ -100,6 +102,7 @@ function Session({ repo, user, children }: { repo: Repo; user: AppUser; children
   const [tutors, setTutors] = useState<Tutor[]>([]);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
 
   const reloadPets = useCallback(
     async (selectId?: string) => {
@@ -147,6 +150,7 @@ function Session({ repo, user, children }: { repo: Repo; user: AppUser; children
       setRecords(r);
       setTutors(t);
       setLoadedFor(id);
+      setTick((t) => t + 1);
     },
     [repo],
   );
@@ -213,8 +217,9 @@ function Session({ repo, user, children }: { repo: Repo; user: AppUser; children
       reloadPets,
       reloadData,
       nameOf,
+      tick,
     }),
-    [repo, user, pets, pet, selectPet, cares, records, tutors, loadedFor, petId, reloadPets, reloadData, nameOf],
+    [repo, user, pets, pet, selectPet, cares, records, tutors, loadedFor, petId, reloadPets, reloadData, nameOf, tick],
   );
 
   if (error && !pets) {

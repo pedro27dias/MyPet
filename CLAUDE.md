@@ -13,7 +13,7 @@ O dono **não programa**: explique em português simples, sem termos técnicos, 
 | 2 | Identidade visual nova (verde floresta + rosa) e aba Cuidados com Cartão de Vacina | ✅ (SQL 002 já rodado) |
 | 2b | Editar perfil do pet | ⬜ |
 | 3 | Aba Guia (fases: filhote, adulto, idoso) | ✅ |
-| 4 | Gastos (aba Pet + botão +) | ⬜ |
+| 4 | Gastos (aba Pet + botão +) | ✅ (rodar `003_gastos.sql`) |
 | 5 | Notificações push (no horário, para todos os tutores; aviso quando alguém conclui) + PWA instalável completa | ⬜ |
 | 6 | Publicar na Vercel | ⬜ |
 
@@ -59,7 +59,8 @@ No PowerShell deste Windows use `npm.cmd`/`npx.cmd`.
 ## Telas
 - **Início** (`components/home/`): saudação + foto, Atrasados (vermelho suave), faixa da semana (seg–dom, bolinhas), lista do dia com botão grande "Feito ✓", Próximo compromisso (consulta/vacina). Menu de cada tarefa: adiar, pular (motivo), editar, mudar horário, desfazer, histórico.
 - **Botão +** (`components/care/add-menu.tsx` + `care-form.tsx`): remédio, vacina, vermífugo, antipulgas, consulta/cirurgia/exame, lembrete livre. Gasto = etapa 4. "Parar este lembrete" desliga (`ativo = false`), nunca apaga.
-- **Pet** (provisória): perfil, trocar foto, tutores, convidar, outro cachorro, sair.
+- **Pet** (`components/pet/pet-screen.tsx`): foto e nome no topo + abas em pílula **Perfil** (dados, ligar pro vet, outro cachorro, sair), **Gastos** e **Tutores** (lista + convidar).
+- **Gastos** (`components/gastos/`, SQL `003_gastos.sql`, tabela `gastos`: valor, categoria `racao|vet|remedio|banho|outros`, data, `pago_por`, descrição; RLS por tutor, realtime): painel do mês com setas (não passa do mês atual), total, barras por categoria, "quem pagou" quando há mais de um, lista (tocar corrige ou apaga, com confirmação). Lançar pelo painel ou pelo **+ → Gasto**. Valor digitado em centavos ("8990" = R$ 89,90). Dinheiro sempre por `fmtMoney`/`sumMoney` (`lib/money.ts`). O app recarrega os gastos pelo `tick` do `useApp()`.
 - **Guia** (`components/guia/guia-screen.tsx`, conteúdo em `lib/guide.ts`): aviso fixo no topo ("Informações gerais. Siga sempre a orientação do seu veterinário.", acompanha a rolagem), seletor Filhote/Adulto/Idoso (abre na fase do pet, com bolinha nela), cartão da fase (verde, "Fifu está nesta fase"), cards curtos por assunto (vacinas, vermífugo, pulgas, alimentação, cuidados gerais) e "Quando correr para o veterinário". Fase: filhote < 1 ano; idoso a partir de 7 anos (6 se porte gigante) — `petPhase()`. Texto sempre simples e geral, sem marcas nem doses.
 - Seletor de pet no topo só aparece com 2+ cachorros.
 - `/convite/CODIGO`: aceitar convite (depois do login).
