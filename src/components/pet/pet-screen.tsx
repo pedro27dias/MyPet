@@ -1,10 +1,11 @@
 "use client";
 
-import { Camera, LogOut, Phone, Plus, UserPlus } from "lucide-react";
+import { Camera, LogOut, Pencil, Phone, Plus, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ExpensesPanel } from "../gastos/expenses-panel";
+import { EditPetSheet } from "./edit-pet-sheet";
 import { ageText, fmtDate } from "@/lib/dates";
 import { compressPhoto } from "@/lib/photo";
 import { setDemoMode } from "@/lib/repo";
@@ -34,6 +35,7 @@ export function PetScreen() {
   const [invite, setInvite] = useState<string | null>(null);
   const [inviteBusy, setInviteBusy] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [tab, setTab] = useState<(typeof SECTIONS)[number]["key"]>("perfil");
   if (!pet) return null;
 
@@ -129,7 +131,9 @@ export function PetScreen() {
                   </a>
                 )}
               </section>
-              <p className="mt-2 px-2 text-sm text-faint">Editar o perfil chega na próxima etapa.</p>
+              <Button variant="soft" size="lg" className="mt-3 w-full" onClick={() => setEditing(true)}>
+                <Pencil size={18} /> Editar perfil
+              </Button>
               <div className="mt-8 space-y-2">
                 <Button variant="outline" className="w-full" onClick={() => router.push("/novo-pet")}>
                   <Plus size={18} /> Adicionar outro cachorro
@@ -163,6 +167,8 @@ export function PetScreen() {
           )}
         </motion.div>
       </AnimatePresence>
+
+      <EditPetSheet open={editing} onClose={() => setEditing(false)} pet={pet} />
 
       <Sheet open={!!invite} onClose={() => setInvite(null)} title="Convite">
         {invite && (
