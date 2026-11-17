@@ -9,10 +9,10 @@ O dono **não programa**: explique em português simples, sem termos técnicos, 
 ## Etapas
 | # | Etapa | Situação |
 |---|---|---|
-| 1 | Banco de dados, login (e-mail/Google), cadastro do cachorro (16 perguntas + agenda sugerida), aba Início com "Feito ✓" | ✅ (falta ligar o Supabase de verdade, ver "Ligar o banco") |
-| 2 | Identidade visual nova (verde floresta + rosa) e aba Cuidados com Cartão de Vacina | ✅ (rodar `002_cartao_vacina.sql`) |
+| 1 | Banco de dados, login (e-mail/Google), cadastro do cachorro (16 perguntas + agenda sugerida), aba Início com "Feito ✓" | ✅ (Supabase ligado; Google ainda não configurado) |
+| 2 | Identidade visual nova (verde floresta + rosa) e aba Cuidados com Cartão de Vacina | ✅ (SQL 002 já rodado) |
 | 2b | Editar perfil do pet | ⬜ |
-| 3 | Aba Guia (fases: filhote, adulto, idoso) | ⬜ |
+| 3 | Aba Guia (fases: filhote, adulto, idoso) | ✅ |
 | 4 | Gastos (aba Pet + botão +) | ⬜ |
 | 5 | Notificações push (no horário, para todos os tutores; aviso quando alguém conclui) + PWA instalável completa | ⬜ |
 | 6 | Publicar na Vercel | ⬜ |
@@ -59,7 +59,8 @@ No PowerShell deste Windows use `npm.cmd`/`npx.cmd`.
 ## Telas
 - **Início** (`components/home/`): saudação + foto, Atrasados (vermelho suave), faixa da semana (seg–dom, bolinhas), lista do dia com botão grande "Feito ✓", Próximo compromisso (consulta/vacina). Menu de cada tarefa: adiar, pular (motivo), editar, mudar horário, desfazer, histórico.
 - **Botão +** (`components/care/add-menu.tsx` + `care-form.tsx`): remédio, vacina, vermífugo, antipulgas, consulta/cirurgia/exame, lembrete livre. Gasto = etapa 4. "Parar este lembrete" desliga (`ativo = false`), nunca apaga.
-- **Pet** (provisória): perfil, trocar foto, tutores, convidar, outro cachorro, sair. **Guia**: "Chega na próxima etapa".
+- **Pet** (provisória): perfil, trocar foto, tutores, convidar, outro cachorro, sair.
+- **Guia** (`components/guia/guia-screen.tsx`, conteúdo em `lib/guide.ts`): aviso fixo no topo ("Informações gerais. Siga sempre a orientação do seu veterinário.", acompanha a rolagem), seletor Filhote/Adulto/Idoso (abre na fase do pet, com bolinha nela), cartão da fase (verde, "Fifu está nesta fase"), cards curtos por assunto (vacinas, vermífugo, pulgas, alimentação, cuidados gerais) e "Quando correr para o veterinário". Fase: filhote < 1 ano; idoso a partir de 7 anos (6 se porte gigante) — `petPhase()`. Texto sempre simples e geral, sem marcas nem doses.
 - Seletor de pet no topo só aparece com 2+ cachorros.
 - `/convite/CODIGO`: aceitar convite (depois do login).
 
