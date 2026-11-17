@@ -253,6 +253,12 @@ export const demoRepo: Repo = {
     save(db);
   },
 
+  async savePushSubscription() {
+    throw new Error("Notificações só funcionam com conta (fora do modo demonstração).");
+  },
+  async deletePushSubscription() {},
+  async notifyDone() {},
+
   async listTutors(): Promise<Tutor[]> {
     return [{ userId: USER.id, name: USER.name, role: "principal" }];
   },

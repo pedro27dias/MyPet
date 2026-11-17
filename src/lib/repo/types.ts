@@ -53,6 +53,12 @@ export interface Repo {
   saveExpense(e: Expense): Promise<void>;
   deleteExpense(id: string): Promise<void>;
 
+  // Notificações
+  savePushSubscription(endpoint: string, keys: Record<string, string>): Promise<void>;
+  deletePushSubscription(endpoint: string): Promise<void>;
+  /** Avisa os outros tutores que esta tarefa foi feita (não trava a tela se falhar). */
+  notifyDone(recordId: string): Promise<void>;
+
   // Tutores
   listTutors(petId: string): Promise<Tutor[]>;
   createInvite(petId: string): Promise<string>;

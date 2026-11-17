@@ -14,7 +14,7 @@ O dono **não programa**: explique em português simples, sem termos técnicos, 
 | 2b | Editar perfil do pet | ✅ |
 | 3 | Aba Guia (fases: filhote, adulto, idoso) | ✅ |
 | 4 | Gastos (aba Pet + botão +) | ✅ (rodar `003_gastos.sql`) |
-| 5 | Notificações push (no horário, para todos os tutores; aviso quando alguém conclui) + PWA instalável completa | ⬜ |
+| 5 | Notificações push (no horário, para todos os tutores; aviso quando alguém conclui) + PWA instalável completa | ✅ código (falta: variáveis na Vercel + rodar `004_notificacoes.sql` com o CRON_SECRET) |
 | 6 | Publicar na Vercel | ✅ https://my-pet-orcin.vercel.app (conta Vercel da pedro27dias, projeto `my-pet`; publica sozinho a cada push no `main`; variáveis `NEXT_PUBLIC_SUPABASE_*` em Production; cron diário `/api/manter-ativo` em `vercel.json` mantém o Supabase acordado) |
 
 ## Comandos
@@ -80,6 +80,13 @@ No PowerShell deste Windows use `npm.cmd`/`npx.cmd`.
 - Entra sozinho no cartão todo registro `feito` de vacina/vermífugo/antipulgas (cadastro, botão +, "Feito ✓" ou "Adicionar registro"). Próxima dose = `proxima_em` do lembrete, na aplicação mais recente. Lembrete sem aplicação aparece como "a aplicar".
 - "Adicionar registro" (`add-record-sheet.tsx`, `repo.addRecord`): tipo, qual (ou nova), data, próxima dose (só anda para a frente), clínica (`registros.clinica`), foto da etiqueta (`registros.lote_foto`, Storage `fotos-pets/<pet>/etiqueta-...`).
 - Compartilhar: imagem PNG desenhada em canvas (`cardImage`) ou PDF pela impressão do navegador (`#cartao-impressao`, regras `@media print`).
+
+## Notificações (Web Push)
+- Celular: `public/sw.js` (recebe e abre o app ao tocar; ícone pequeno = silhueta), registrado em `AppProvider` (`lib/push.ts`). Ligar/desligar: `components/shared/notifications.tsx` (cartão no Início que some ao ativar/fechar; linha em Pet → Perfil). iPhone só com o app instalado na Tela de Início. Inscrição salva por `salvar_inscricao` (passa o aparelho para quem entrou nele).
+- Na hora: o **Supabase (pg_cron + pg_net, SQL 004) chama `/api/notificacoes/enviar` a cada 5 min** com `Authorization: Bearer CRON_SECRET` (o cron da Vercel grátis só roda 1x por dia). A rotina usa a chave secreta do Supabase (`lib/server/notify.ts`, `server-only`), calcula as tarefas com `lib/schedule.ts` no **relógio de Brasília** (desloca as datas; NUNCA mudar `process.env.TZ`: o servidor de teste entra em recarregamento sem fim), manda o que venceu nos últimos 15 min e o aviso antes de consultas (`antecedencia_min`). Cada aviso sai uma vez (`notificacoes_enviadas`).
+- Feito: o app chama `/api/notificacoes/concluido` com o login; os OUTROS tutores recebem "Feito por X às 8h05".
+- Variáveis (Vercel, Production): `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (Secret), `CRON_SECRET` (Secret; o mesmo valor vai no SQL 004), `SUPABASE_SERVICE_ROLE_KEY` (Secret). Valores locais em `.env.local`.
+- O navegador embutido do Claude não aceita service worker: testar notificações num celular de verdade.
 
 ## Organização
 - Datas em texto `AAAA-MM-DD` com `parseDate()`; horários locais do celular (`lib/dates.ts`).

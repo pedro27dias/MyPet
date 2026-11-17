@@ -16,6 +16,7 @@ import { TaskRow } from "./task-row";
 import { AlreadyDoneSheet, EditTimeSheet, TaskMenuSheet } from "./task-sheets";
 import { useTaskActions } from "./use-task-actions";
 import { WeekStrip } from "./week-strip";
+import { NotificationsCard } from "../shared/notifications";
 
 /** Aba Início: saudação, atrasados, semana, tarefas do dia e próximo compromisso. */
 export function HomeScreen() {
@@ -86,6 +87,7 @@ export function HomeScreen() {
         <Skeleton />
       ) : (
         <div className="space-y-6">
+          <NotificationsCard />
           {overdue.length > 0 && (
             <section>
               <h2 className="mb-2 px-1 titulo text-xl !text-danger">Atrasados</h2>

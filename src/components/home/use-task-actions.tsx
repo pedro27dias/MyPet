@@ -58,6 +58,7 @@ export function useTaskActions() {
         }
         await reloadData();
         const record = res.record;
+        repo.notifyDone(record.id).catch(() => {}); // avisa os outros tutores
         toast(`Feito às ${fmtTimeShort(record.doneAt ?? now)} ✓`, {
           actions: [
             { label: "Mudar horário", onClick: () => setEditTime(record) },

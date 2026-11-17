@@ -74,7 +74,7 @@ function petToRow(p: Partial<PetFields>): Row {
   return row;
 }
 
-function careFromRow(r: Row): Care {
+export function careFromRow(r: Row): Care {
   return {
     id: r.id as string,
     petId: r.pet_id as string,
@@ -113,7 +113,7 @@ function careToRow(c: Care): Row {
   };
 }
 
-function recordFromRow(r: Row): CareRecord {
+export function recordFromRow(r: Row): CareRecord {
   return {
     id: r.id as string,
     careId: r.cuidado_id as string,
@@ -348,6 +348,30 @@ export const cloudRepo: Repo = {
 
   async deleteExpense(id) {
     expectRows(await supabase().from("gastos").delete().eq("id", id).select("id"));
+  },
+
+  async savePushSubscription(endpoint, keys) {
+    const { error } = await supabase().rpc("salvar_inscricao", { p_endpoint: endpoint, p_chaves: keys });
+    if (error) {
+      if (/salvar_inscricao/.test(error.message)) throw new Error("Falta atualizar o banco: rode o arquivo 004_notificacoes.sql no Supabase.");
+      fail(error);
+    }
+  },
+
+  async deletePushSubscription(endpoint) {
+    const { error } = await supabase().from("notificacoes_inscricoes").delete().eq("endpoint", endpoint);
+    if (error) fail(error);
+  },
+
+  async notifyDone(recordId) {
+    const { data } = await supabase().auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) return;
+    await fetch("/api/notificacoes/concluido", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ registroId: recordId }),
+    });
   },
 
   async listTutors(petId) {

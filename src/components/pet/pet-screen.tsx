@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { ExpensesPanel } from "../gastos/expenses-panel";
 import { EditPetSheet } from "./edit-pet-sheet";
+import { NotificationsSetting } from "../shared/notifications";
 import { ageText, fmtDate } from "@/lib/dates";
 import { compressPhoto } from "@/lib/photo";
 import { setDemoMode } from "@/lib/repo";
@@ -134,6 +135,9 @@ export function PetScreen() {
               <Button variant="soft" size="lg" className="mt-3 w-full" onClick={() => setEditing(true)}>
                 <Pencil size={18} /> Editar perfil
               </Button>
+              <div className="mt-6">
+                <NotificationsSetting />
+              </div>
               <div className="mt-8 space-y-2">
                 <Button variant="outline" className="w-full" onClick={() => router.push("/novo-pet")}>
                   <Plus size={18} /> Adicionar outro cachorro

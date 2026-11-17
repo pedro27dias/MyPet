@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { pickRepo, type Repo } from "@/lib/repo";
+import { registerServiceWorker } from "@/lib/push";
 import type { AppUser, Care, CareRecord, Pet, Tutor } from "@/lib/types";
 import { addDays, startOfWeek } from "@/lib/dates";
 import { ToastProvider } from "./ui/toast";
@@ -63,6 +64,7 @@ function Gate({ children }: { children: ReactNode }) {
   // Escolhe nuvem ou demonstração (só existe no navegador).
   useEffect(() => {
     const r = pickRepo();
+    registerServiceWorker(); // deixa o app pronto para notificações e instalação
     let alive = true;
     r.currentUser().then((u) => {
       if (!alive) return;
