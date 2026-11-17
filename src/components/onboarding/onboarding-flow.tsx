@@ -4,15 +4,15 @@ import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { emptyAnswers, newId, suggestCares, toPetFields, type Answers, type Suggestion } from "@/lib/onboarding";
+import { emptyAnswers, felvTestRecord, newId, suggestCares, toPetFields, type Answers, type Suggestion } from "@/lib/onboarding";
 import { atTime } from "@/lib/dates";
 import { useApp } from "../app-provider";
 import { Button } from "../ui/button";
-import { STEPS } from "./steps";
+import { stepsFor } from "./steps";
 import { ReviewScreen } from "./review-screen";
 import { DoneScreen } from "./done-screen";
 
-/** Cadastro do cachorro: uma pergunta por tela, barra de progresso, "Pular" em todas. */
+/** Cadastro do pet (cachorro ou gato): uma pergunta por tela, barra de progresso, "Pular" em todas. */
 export function OnboardingFlow() {
   const router = useRouter();
   const { repo, pets, reloadPets } = useApp();
@@ -31,12 +31,15 @@ export function OnboardingFlow() {
     latest.current = a;
   }, [a]);
 
+  const STEPS = stepsFor(a.species);
+  const total = STEPS.length;
+
   const set = useCallback((patch: Partial<Answers>) => setA((prev) => ({ ...prev, ...patch })), []);
 
   const go = useCallback(
     (to: number) => {
       if (autoTimer.current) clearTimeout(autoTimer.current);
-      if (to >= STEPS.length) {
+      if (to >= total) {
         setSuggestions(suggestCares(latest.current, "provisorio"));
         setStage("resumo");
         return;
@@ -44,7 +47,7 @@ export function OnboardingFlow() {
       setDir(to > i ? 1 : -1);
       setI(Math.max(0, to));
     },
-    [i],
+    [i, total],
   );
 
   // Escolha única avança sozinha, com uma pausa curta para ver a marcação.
@@ -62,12 +65,19 @@ export function OnboardingFlow() {
     setError(null);
     try {
       const fields = toPetFields(a);
-      if (!fields.name) fields.name = "Meu cachorro";
+      const fallback = fields.species === "gato" ? "Meu gato" : "Meu cachorro";
+      if (!fields.name) fields.name = fallback;
       const chosen = suggestions.filter((s) => s.enabled);
       const cares = chosen.map((s) => ({ ...s.care, id: newId() }));
-      const history = chosen
+      const history: { careId: string; at: string; result?: string | null }[] = chosen
         .map((s, k) => (s.lastDone ? { careId: cares[k].id, at: atTime(s.lastDone, "09:00").toISOString() } : null))
         .filter((h): h is { careId: string; at: string } => h !== null);
+      // Teste FeLV/FIV já feito: entra no cartão de vacina com o resultado
+      const test = felvTestRecord(a, "provisorio");
+      if (test) {
+        cares.push({ ...test.care, id: newId() });
+        history.push({ careId: cares[cares.length - 1].id, at: test.at, result: test.result });
+      }
       const petId = await repo.createPet(fields, cares, history);
       let photoFailed = false;
       if (a.photo) {
@@ -86,8 +96,8 @@ export function OnboardingFlow() {
         }
       }
       await reloadPets(petId);
-      const ofName = fields.name === "Meu cachorro" ? "do seu cachorro" : `${fields.sex === "femea" ? "da" : fields.sex === "macho" ? "do" : "de"} ${fields.name}`;
-      setResult({ petId, name: fields.name, ofName, count: cares.length, invite });
+      const ofName = fields.name === fallback ? `do seu ${fields.species === "gato" ? "gato" : "cachorro"}` : `${fields.sex === "femea" ? "da" : fields.sex === "macho" ? "do" : "de"} ${fields.name}`;
+      setResult({ petId, name: fields.name, ofName, count: chosen.length, invite });
       setStage("pronto");
       if (photoFailed) setError("A foto não foi enviada. Dá para colocar depois na aba Pet.");
     } catch (e) {
@@ -98,7 +108,7 @@ export function OnboardingFlow() {
   }
 
   if (stage === "pronto" && result) {
-    return <DoneScreen {...result} photo={a.photoPreview} warning={error} onFinish={() => router.replace("/")} mode={repo.mode} />;
+    return <DoneScreen {...result} species={a.species} photo={a.photoPreview} warning={error} onFinish={() => router.replace("/")} mode={repo.mode} />;
   }
 
   if (stage === "resumo") {
@@ -116,7 +126,7 @@ export function OnboardingFlow() {
   }
 
   const step = STEPS[i];
-  const progress = (i + 1) / (STEPS.length + 1);
+  const progress = (i + 1) / (total + 1);
 
   return (
     <main className="pt-safe mx-auto flex min-h-dvh max-w-md flex-col px-5">
@@ -154,7 +164,7 @@ export function OnboardingFlow() {
             className="pb-32 pt-4"
           >
             <p className="text-sm font-bold text-primary">
-              {i + 1} de {STEPS.length}
+              {i + 1} de {total}
             </p>
             <h1 className="mt-1 titulo text-[2rem] leading-tight">{step.title(a)}</h1>
             {step.hint && <p className="mt-2 text-muted">{step.hint}</p>}
@@ -168,7 +178,7 @@ export function OnboardingFlow() {
       <footer className="pb-safe fixed inset-x-0 bottom-0 bg-gradient-to-t from-bg via-bg to-transparent px-5 pt-6">
         <div className="mx-auto max-w-md">
           <Button size="lg" className="w-full" onClick={() => go(i + 1)}>
-            {i === STEPS.length - 1 ? "Ver a agenda" : "Continuar"}
+            {i === total - 1 ? "Ver a agenda" : "Continuar"}
           </Button>
         </div>
       </footer>

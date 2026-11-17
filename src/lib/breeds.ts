@@ -1,4 +1,4 @@
-import type { Size } from "./types";
+import type { Size, Species } from "./types";
 
 export const SRD = "SRD (vira-lata)";
 
@@ -57,6 +57,24 @@ export const BREEDS: { name: string; size: Size | null }[] = [
   { name: "Whippet", size: "medio" },
   { name: "Galgo", size: "grande" },
 ];
+
+/** Raças de gato mais comuns (gato não tem pergunta de porte). */
+export const CAT_BREEDS: { name: string; size: Size | null }[] = [
+  { name: SRD, size: null },
+  { name: "Siamês", size: null },
+  { name: "Persa", size: null },
+  { name: "Maine Coon", size: null },
+  { name: "Angorá", size: null },
+  { name: "Ragdoll", size: null },
+  { name: "British Shorthair", size: null },
+  { name: "Bengal", size: null },
+  { name: "Sphynx", size: null },
+  { name: "Exótico", size: null },
+];
+
+export function breedsFor(species: Species | null | undefined) {
+  return species === "gato" ? CAT_BREEDS : BREEDS;
+}
 
 export function breedSize(name: string | null): Size | null {
   return BREEDS.find((b) => b.name === name)?.size ?? null;

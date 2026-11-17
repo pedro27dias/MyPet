@@ -20,7 +20,7 @@ const titleFont = Fraunces({
 
 export const metadata: Metadata = {
   title: "MyPet",
-  description: "O que fazer e quando, para o seu cachorro.",
+  description: "O que fazer e quando, para o seu cachorro ou gato.",
   applicationName: "MyPet",
   appleWebApp: { capable: true, title: "MyPet", statusBarStyle: "default" },
   formatDetection: { telephone: false },

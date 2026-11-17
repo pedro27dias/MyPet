@@ -2,7 +2,7 @@
 
 # MyPet (nome provisório "PetCare")
 
-App web mobile-first (vai virar PWA instalável) para o dono de cachorro saber **o que fazer e quando**, sem precisar lembrar.
+App web mobile-first (PWA instalável) para o dono de cachorro **ou gato** saber **o que fazer e quando**, sem precisar lembrar.
 Prioridade: **simplicidade e rapidez. Registrar algo = 1 toque.**
 O dono **não programa**: explique em português simples, sem termos técnicos, e diga como ver o resultado no navegador.
 
@@ -16,6 +16,16 @@ O dono **não programa**: explique em português simples, sem termos técnicos, 
 | 4 | Gastos (aba Pet + botão +) | ✅ (rodar `003_gastos.sql`) |
 | 5 | Notificações push (no horário, para todos os tutores; aviso quando alguém conclui) + PWA instalável completa | ✅ (variáveis na Vercel e SQL 004 rodado; cron do Supabase respondendo 200 — conferir em `net._http_response`) |
 | 6 | Publicar na Vercel | ✅ https://my-pet-orcin.vercel.app (conta Vercel da pedro27dias, projeto `my-pet`; publica sozinho a cada push no `main`; variáveis `NEXT_PUBLIC_SUPABASE_*` em Production; cron diário `/api/manter-ativo` em `vercel.json` mantém o Supabase acordado) |
+| 7 | Suporte a gatos (ver seção "Gatos") | ✅ (SQL 005 rodado) |
+
+## Gatos
+- `pets.especie` (`cachorro`/`gato`, padrão cachorro) + só gato: `estilo_vida` (`dentro`/`as_vezes`/`sempre`), `outros_animais` (text[]), `teste_felv_fiv`, `racao_tipo`. Tipo de cuidado novo `exame` (testes; `registros.resultado`). SQL `005_gatos.sql` (refaz `criar_pet`). Sem o 005, `cloud.ts` avisa "rode o arquivo 005".
+- Cadastro: 1ª pergunta "Seu pet é…" (`SpeciesStep`); `stepsFor(species)` em `steps.tsx` = 16 de cachorro ou 18 de gato (sem porte; com rotina, outros animais, FeLV/FIV, alimentação seca/úmida/mista). Pular = cachorro.
+- Agenda de gato: `suggestCatCares` em `lib/onboarding.ts` (polivalente V3/V4/V5 e antirrábica sempre, FeLV se já fez, "Conversar com o vet sobre teste FeLV/FIV" se não fez/não sabe, vermífugo filhote/dentro de casa 6 meses/sai 3 meses, antipulgas com "Use apenas produto indicado para gatos", check-up anual e a cada 6 meses a partir de 10 anos). Teste já feito vira registro `exame` com resultado (`felvTestRecord`).
+- Guia: `guideFor(species)` em `lib/guide.ts`; gato tem 4 fases (`filhote`, `jovem` 1–6, `maduro` 7–10, `senior` 10+), cartões fixos de segurança (`CAT_SAFETY`) e aviso com WSAVA/AAHA/AAFP/ESCCAP (`DISCLAIMER_CAT`).
+- Cartão: `cardSections(species)` em `lib/vaccine-card.ts` (gato: Polivalente, Antirrábica, FeLV, Testes com resultado, Vermífugo, Antipulgas; seção por `match`).
+- Segurança: `FleaSafetyNote` (`components/care/flea-safety.tsx`) no cadastro, no + e no cartão: gato → "Use apenas produto indicado para gatos"; cachorro numa conta com gato → alerta de permetrina.
+- Ícones: `PetAvatar species`, `PetMark` (silhueta de gato desenhada em `components/shared/species.tsx`) na capa do cartão e no Início; aba Pet mostra gato.
 
 ## Comandos
 ```bash

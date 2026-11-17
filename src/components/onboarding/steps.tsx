@@ -2,15 +2,18 @@
 
 /* eslint-disable @next/next/no-img-element -- prévia local da foto */
 import { Camera, Search } from "lucide-react";
+import { motion } from "motion/react";
 import { useMemo, useRef, useState, type ReactNode } from "react";
-import { BREEDS, SRD, breedSize, normalize } from "@/lib/breeds";
+import { SRD, breedSize, breedsFor, normalize } from "@/lib/breeds";
 import { compressPhoto } from "@/lib/photo";
-import { VACCINES, type Answers, type FleaMethod } from "@/lib/onboarding";
-import type { Freq, Origin, Size } from "@/lib/types";
+import { isCat, vaccinesFor, type Answers, type FleaMethod } from "@/lib/onboarding";
+import type { FelvTest, FoodType, Freq, Lifestyle, Origin, OtherAnimal, Size, Species } from "@/lib/types";
+import { FleaSafetyNote } from "../care/flea-safety";
 import { BigOptions, Choice, Pills, Stepper, TextField, TimeList, YesNo } from "../ui/fields";
 
 /*
- * As 16 perguntas do cadastro. Cada uma é uma tela. "auto" = avança sozinha ao escolher.
+ * Perguntas do cadastro. Cada uma é uma tela. "auto" = avança sozinha ao escolher.
+ * Primeiro "Seu pet é…" (cachorro ou gato); depois 16 perguntas de cachorro ou 18 de gato.
  */
 
 export interface StepProps {
@@ -27,38 +30,175 @@ export interface StepDef {
   Body: (p: StepProps) => ReactNode;
 }
 
-const petName = (a: Answers) => a.name.trim() || "seu cachorro";
-/** "o Thor" / "a Mel" / "seu cachorro" */
-const oPet = (a: Answers) => (a.name.trim() ? `${a.sex === "femea" ? "a" : "o"} ${a.name.trim()}` : "seu cachorro");
+const bicho = (a: Pick<Answers, "species">) => (isCat(a) ? "gato" : "cachorro");
+const petName = (a: Answers) => a.name.trim() || `seu ${bicho(a)}`;
+/** "o Thor" / "a Mel" / "seu cachorro" / "seu gato" */
+const oPet = (a: Answers) => (a.name.trim() ? `${a.sex === "femea" ? "a" : "o"} ${a.name.trim()}` : `seu ${bicho(a)}`);
 const OPet = (a: Answers) => {
   const s = oPet(a);
   return s.charAt(0).toUpperCase() + s.slice(1);
 };
 const fem = (a: Answers, m: string, f: string) => (a.sex === "femea" ? f : m);
 
-export const STEPS: StepDef[] = [
-  {
-    key: "nome",
-    title: () => "Qual é o nome do seu cachorro?",
-    hint: "Se quiser, coloque uma foto também.",
-    Body: NameStep,
+const SPECIES_STEP: StepDef = { key: "especie", title: () => "Seu pet é…", hint: "O cadastro e a agenda se adaptam a ele.", Body: SpeciesStep };
+
+const S: Record<string, StepDef> = {
+  nome: { key: "nome", title: (a) => `Qual é o nome do seu ${bicho(a)}?`, hint: "Se quiser, coloque uma foto também.", Body: NameStep },
+  raca: { key: "raca", title: (a) => `Qual é a raça ${a.name.trim() ? `de ${a.name.trim()}` : "dele"}?`, Body: BreedStep },
+  sexo: { key: "sexo", title: (a) => `${a.name.trim() || `Seu ${bicho(a)}`} é macho ou fêmea?`, Body: SexStep },
+  idade: { key: "idade", title: (a) => `Quando ${oPet(a)} nasceu?`, hint: "Se não souber a data, use a idade aproximada.", Body: AgeStep },
+  porte: { key: "porte", title: (a) => `Qual é o porte ${a.name.trim() ? `de ${a.name.trim()}` : "dele"}?`, Body: SizeStep },
+  origem: { key: "origem", title: (a) => `Como ${oPet(a)} chegou até você?`, Body: OriginStep },
+  castrado: { key: "castrado", title: (a) => `${OPet(a)} é ${fem(a, "castrado", "castrada")}?`, Body: NeuteredStep },
+  estilo: { key: "estilo", title: (a) => `Como é a rotina ${a.name.trim() ? `${fem(a, "do", "da")} ${a.name.trim()}` : "dele"}?`, hint: "Ajuda a definir o vermífugo e as vacinas.", Body: LifestyleStep },
+  outros: { key: "outros", title: (a) => `${OPet(a)} mora com outros animais?`, hint: "Pode marcar mais de um.", Body: OtherAnimalsStep },
+  felv: { key: "felv", title: (a) => `${OPet(a)} já fez o teste de FeLV/FIV?`, hint: "Exame de sangue para duas doenças que passam entre gatos.", Body: FelvStep },
+  doenca: { key: "doenca", title: (a) => `${OPet(a)} tem alguma doença de base?`, hint: "Ex.: problema no coração, rim, diabetes, epilepsia.", Body: DiseaseStep },
+  alergia: { key: "alergia", title: (a) => `${OPet(a)} tem alguma alergia?`, hint: "Ex.: a algum alimento, remédio ou picada.", Body: AllergyStep },
+  remedio: { key: "remedio", title: (a) => `${OPet(a)} toma algum remédio todo dia ou sempre?`, hint: "Se sim, já criamos o lembrete.", Body: MedStep },
+  vacinas: { key: "vacinas", title: () => "Quais vacinas já foram feitas?", hint: "Marque e, se souber, coloque a data da última dose.", Body: VaccinesStep },
+  vermifugo: { key: "vermifugo", title: () => "Quando foi o último vermífugo?", hint: "Pode ser uma data aproximada.", Body: DewormerStep },
+  pulgas: {
+    key: "pulgas",
+    title: (a) => (isCat(a) ? `Como você protege ${oPet(a)} de pulgas?` : `Como você protege ${oPet(a)} de pulgas e carrapatos?`),
+    Body: FleaStep,
   },
-  { key: "raca", title: (a) => `Qual é a raça ${a.name.trim() ? `de ${a.name.trim()}` : "dele"}?`, Body: BreedStep },
-  { key: "sexo", title: (a) => `${a.name.trim() || "Seu cachorro"} é macho ou fêmea?`, Body: SexStep },
-  { key: "idade", title: (a) => `Quando ${oPet(a)} nasceu?`, hint: "Se não souber a data, use a idade aproximada.", Body: AgeStep },
-  { key: "porte", title: (a) => `Qual é o porte ${a.name.trim() ? `de ${a.name.trim()}` : "dele"}?`, Body: SizeStep },
-  { key: "origem", title: (a) => `Como ${oPet(a)} chegou até você?`, Body: OriginStep },
-  { key: "castrado", title: (a) => `${OPet(a)} é ${fem(a, "castrado", "castrada")}?`, Body: NeuteredStep },
-  { key: "doenca", title: (a) => `${OPet(a)} tem alguma doença de base?`, hint: "Ex.: problema no coração, rim, diabetes, epilepsia.", Body: DiseaseStep },
-  { key: "alergia", title: (a) => `${OPet(a)} tem alguma alergia?`, hint: "Ex.: a algum alimento, remédio ou picada.", Body: AllergyStep },
-  { key: "remedio", title: (a) => `${OPet(a)} toma algum remédio todo dia ou sempre?`, hint: "Se sim, já criamos o lembrete.", Body: MedStep },
-  { key: "vacinas", title: () => "Quais vacinas já foram feitas?", hint: "Marque e, se souber, coloque a data da última dose.", Body: VaccinesStep },
-  { key: "vermifugo", title: () => "Quando foi o último vermífugo?", hint: "Pode ser uma data aproximada.", Body: DewormerStep },
-  { key: "pulgas", title: (a) => `Como você protege ${oPet(a)} de pulgas e carrapatos?`, Body: FleaStep },
-  { key: "racao", title: (a) => `Qual ração ${oPet(a)} come?`, hint: "Opcional.", Body: FoodStep },
-  { key: "vet", title: () => "Tem um veterinário de confiança?", hint: "Opcional. Fica à mão quando precisar.", Body: VetStep },
-  { key: "convite", title: (a) => `Mais alguém cuida ${a.name.trim() ? `${fem(a, "do", "da")} ${a.name.trim()}` : "dele"}?`, hint: "Os dois veem a mesma agenda e sabem quem já fez cada coisa.", Body: InviteStep },
+  racao: { key: "racao", title: (a) => (isCat(a) ? `O que ${oPet(a)} come?` : `Qual ração ${oPet(a)} come?`), hint: "Opcional.", Body: FoodStep },
+  vet: { key: "vet", title: () => "Tem um veterinário de confiança?", hint: "Opcional. Fica à mão quando precisar.", Body: VetStep },
+  convite: {
+    key: "convite",
+    title: (a) => `Mais alguém cuida ${a.name.trim() ? `${fem(a, "do", "da")} ${a.name.trim()}` : "dele"}?`,
+    hint: "Os dois veem a mesma agenda e sabem quem já fez cada coisa.",
+    Body: InviteStep,
+  },
+};
+
+const DOG_KEYS = ["nome", "raca", "sexo", "idade", "porte", "origem", "castrado", "doenca", "alergia", "remedio", "vacinas", "vermifugo", "pulgas", "racao", "vet", "convite"];
+const CAT_KEYS = ["nome", "raca", "sexo", "idade", "origem", "castrado", "estilo", "outros", "felv", "doenca", "alergia", "remedio", "vacinas", "vermifugo", "pulgas", "racao", "vet", "convite"];
+
+/** "Seu pet é…" + as perguntas da espécie (16 de cachorro, 18 de gato). */
+export function stepsFor(species: Species | null): StepDef[] {
+  return [SPECIES_STEP, ...(species === "gato" ? CAT_KEYS : DOG_KEYS).map((k) => S[k])];
+}
+
+// ---------------------------------------------------------------------------------------------
+
+function SpeciesStep({ a, set, next }: StepProps) {
+  const options: { v: Species; label: string; emoji: string }[] = [
+    { v: "cachorro", label: "Cachorro", emoji: "🐶" },
+    { v: "gato", label: "Gato", emoji: "🐱" },
+  ];
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      {options.map((o, i) => {
+        const sel = a.species === o.v;
+        return (
+          <motion.button
+            key={o.v}
+            type="button"
+            aria-pressed={sel}
+            onClick={() => (set({ species: o.v }), next())}
+            initial={{ opacity: 0, y: 18, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ delay: 0.08 * i, type: "spring", stiffness: 320, damping: 24 }}
+            whileTap={{ scale: 0.95 }}
+            className={`flex h-52 flex-col items-center justify-center gap-3 rounded-3xl border-2 shadow-card transition-colors ${
+              sel ? "border-forest bg-forest text-pink" : "border-line bg-card text-forest"
+            }`}
+          >
+            <motion.span
+              className="text-7xl"
+              animate={sel ? { rotate: [0, -12, 10, -6, 0], scale: [1, 1.15, 1] } : { y: [0, -6, 0] }}
+              transition={sel ? { duration: 0.6 } : { duration: 2.4, repeat: Infinity, ease: "easeInOut", delay: i * 0.5 }}
+              aria-hidden
+            >
+              {o.emoji}
+            </motion.span>
+            <span className="titulo text-2xl">{o.label}</span>
+          </motion.button>
+        );
+      })}
+    </div>
+  );
+}
+
+const LIFESTYLES: { v: Lifestyle; label: string; icon: string; hint: string }[] = [
+  { v: "dentro", label: "Só dentro de casa", icon: "🏠", hint: "Apartamento ou casa telada" },
+  { v: "as_vezes", label: "Sai para a rua às vezes", icon: "🪟", hint: "Quintal, passeios" },
+  { v: "sempre", label: "Sai sempre", icon: "🌳", hint: "Entra e sai quando quer" },
 ];
+
+function LifestyleStep({ a, set, next }: StepProps) {
+  return (
+    <div className="space-y-3">
+      {LIFESTYLES.map((o) => (
+        <Choice key={o.v} selected={a.lifestyle === o.v} onClick={() => (set({ lifestyle: o.v }), next())} icon={o.icon} title={o.label} hint={o.hint} />
+      ))}
+    </div>
+  );
+}
+
+const OTHER_ANIMALS: { v: OtherAnimal; label: string; icon: string }[] = [
+  { v: "gatos", label: "Outros gatos", icon: "🐈" },
+  { v: "cachorros", label: "Cachorros", icon: "🐕" },
+  { v: "nenhum", label: "Nenhum, só ele", icon: "🙂" },
+];
+
+function OtherAnimalsStep({ a, set }: StepProps) {
+  function toggle(v: OtherAnimal) {
+    if (v === "nenhum") return set({ otherAnimals: a.otherAnimals.includes("nenhum") ? [] : ["nenhum"] });
+    const rest = a.otherAnimals.filter((x) => x !== "nenhum");
+    set({ otherAnimals: rest.includes(v) ? rest.filter((x) => x !== v) : [...rest, v] });
+  }
+  return (
+    <div className="space-y-3">
+      {OTHER_ANIMALS.map((o) => (
+        <Choice key={o.v} selected={a.otherAnimals.includes(o.v)} onClick={() => toggle(o.v)} icon={o.icon} title={o.label} />
+      ))}
+    </div>
+  );
+}
+
+const FELV: { v: FelvTest; label: string; icon: string }[] = [
+  { v: "negativo", label: "Sim, deu negativo", icon: "✅" },
+  { v: "positivo", label: "Sim, deu positivo", icon: "➕" },
+  { v: "nao_fez", label: "Não fez", icon: "—" },
+  { v: "nao_sei", label: "Não sei", icon: "🤔" },
+];
+
+function FelvStep({ a, set, next }: StepProps) {
+  const tested = a.felv.test === "negativo" || a.felv.test === "positivo";
+  return (
+    <div className="space-y-3">
+      {FELV.map((o) => (
+        <Choice
+          key={o.v}
+          selected={a.felv.test === o.v}
+          onClick={() => {
+            set({ felv: { ...a.felv, test: o.v } });
+            if (o.v === "nao_fez" || o.v === "nao_sei") next();
+          }}
+          icon={o.icon}
+          title={o.label}
+        />
+      ))}
+      {tested && (
+        <TextField
+          label="Quando fez o teste? (se souber)"
+          type="date"
+          value={a.felv.date}
+          max={new Date().toISOString().slice(0, 10)}
+          onChange={(v) => set({ felv: { ...a.felv, date: v } })}
+        />
+      )}
+      {a.felv.test === "positivo" && (
+        <p className="rounded-2xl bg-olive-soft px-4 py-3 text-sm text-forest">
+          Muitos gatos positivos vivem bem por anos. O veterinário vai indicar o acompanhamento certo.
+        </p>
+      )}
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------------------------
 
@@ -113,14 +253,15 @@ function NameStep({ a, set }: StepProps) {
 
 function BreedStep({ a, set, next }: StepProps) {
   const [q, setQ] = useState("");
+  const all = breedsFor(a.species);
   const list = useMemo(() => {
     const n = normalize(q.trim());
-    return n ? BREEDS.filter((b) => normalize(b.name).includes(n)) : BREEDS;
-  }, [q]);
-  const exact = BREEDS.some((b) => normalize(b.name) === normalize(q.trim()));
+    return n ? all.filter((b) => normalize(b.name).includes(n)) : all;
+  }, [q, all]);
+  const exact = all.some((b) => normalize(b.name) === normalize(q.trim()));
 
   function choose(name: string) {
-    const size = breedSize(name);
+    const size = isCat(a) ? null : breedSize(name);
     set({ breed: name, ...(size && !a.size ? { size } : {}) });
     next();
   }
@@ -374,7 +515,7 @@ function MedStep({ a, set, next }: StepProps) {
 function VaccinesStep({ a, set }: StepProps) {
   return (
     <div className="space-y-3">
-      {VACCINES.map((v) => {
+      {vaccinesFor(a.species).map((v) => {
         const ans = a.vaccines[v.key];
         const toggle = () => set({ vaccines: { ...a.vaccines, [v.key]: { ...ans, done: !ans.done } } });
         return (
@@ -412,7 +553,7 @@ function DewormerStep({ a, set }: StepProps) {
         label="Produto (opcional)"
         value={a.dewormer.product}
         onChange={(v) => set({ dewormer: { ...a.dewormer, product: v } })}
-        placeholder="Ex.: Drontal, Milbemax"
+        placeholder="Nome do produto"
       />
     </div>
   );
@@ -425,10 +566,20 @@ const FLEA: { v: FleaMethod; label: string; icon: string; hint?: string }[] = [
   { v: "nenhuma", label: "Nenhuma por enquanto", icon: "—" },
 ];
 
+const FLEA_CAT: typeof FLEA = [
+  { v: "pipeta", label: "Pipeta (na nuca)", icon: "💧" },
+  { v: "comprimido", label: "Comprimido", icon: "💊" },
+  { v: "coleira", label: "Coleira para gatos", icon: "📿" },
+  { v: "nenhuma", label: "Nenhuma por enquanto", icon: "—" },
+];
+
 function FleaStep({ a, set }: StepProps) {
+  const cat = isCat(a);
+  const options = cat ? FLEA_CAT : FLEA;
   return (
     <div className="space-y-3">
-      {FLEA.map((f) => (
+      <FleaSafetyNote species={a.species ?? "cachorro"} />
+      {options.map((f) => (
         <Choice key={f.v} selected={a.flea.method === f.v} onClick={() => set({ flea: { ...a.flea, method: f.v } })} icon={f.icon} title={f.label} />
       ))}
       {a.flea.method && a.flea.method !== "nenhuma" && (
@@ -444,7 +595,21 @@ function FleaStep({ a, set }: StepProps) {
   );
 }
 
+const FOOD_TYPES: { value: FoodType; label: string }[] = [
+  { value: "seca", label: "Ração seca" },
+  { value: "umida", label: "Úmida (sachê/lata)" },
+  { value: "mista", label: "Mista" },
+];
+
 function FoodStep({ a, set }: StepProps) {
+  if (isCat(a)) {
+    return (
+      <div className="space-y-4">
+        <Pills options={FOOD_TYPES} value={a.food.type} onChange={(v) => set({ food: { ...a.food, type: v } })} />
+        <TextField label="Marca (opcional)" value={a.food.brand} onChange={(v) => set({ food: { ...a.food, brand: v } })} placeholder="Marca da ração" />
+      </div>
+    );
+  }
   return (
     <div className="space-y-4">
       <TextField label="Marca" value={a.food.brand} onChange={(v) => set({ food: { ...a.food, brand: v } })} placeholder="Ex.: Premier, Golden" />

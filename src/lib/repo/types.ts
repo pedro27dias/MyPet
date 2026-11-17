@@ -20,7 +20,8 @@ export interface Repo {
 
   // Cachorros
   listPets(): Promise<Pet[]>;
-  createPet(pet: PetFields, cares: Care[], history: { careId: string; at: string }[]): Promise<string>;
+  /** history = aplicações já feitas informadas no cadastro (result = resultado de exame). */
+  createPet(pet: PetFields, cares: Care[], history: { careId: string; at: string; result?: string | null }[]): Promise<string>;
   updatePet(id: string, patch: Partial<PetFields>): Promise<void>;
   setPetPhoto(petId: string, photo: Blob): Promise<void>;
 
@@ -41,7 +42,7 @@ export interface Repo {
   snooze(care: Care, occurrence: string, until: string): Promise<void>;
   updateRecordTime(recordId: string, doneAt: string): Promise<void>;
   /** Registro direto no cartão de vacina (aplicação já feita). Se `next` vier, vira a próxima data do cuidado. */
-  addRecord(args: { care: Care; at: string; clinic?: string | null; photo?: Blob | null; next?: string | null }): Promise<void>;
+  addRecord(args: { care: Care; at: string; clinic?: string | null; photo?: Blob | null; next?: string | null; result?: string | null }): Promise<void>;
   /** Links para mostrar fotos guardadas (etiquetas). */
   photoUrls(paths: string[]): Promise<Record<string, string>>;
   undo(recordId: string): Promise<void>;

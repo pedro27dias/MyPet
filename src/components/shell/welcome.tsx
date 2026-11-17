@@ -10,7 +10,7 @@ import { LogoMark } from "./logo-mark";
 import { Sheet } from "../ui/sheet";
 import { Button } from "../ui/button";
 
-/** Primeira tela depois do login, quando ainda não há cachorro. */
+/** Primeira tela depois do login, quando ainda não há pet. */
 export function Welcome() {
   const { user, repo } = useApp();
   const router = useRouter();
@@ -49,7 +49,7 @@ export function Welcome() {
           {first && first !== "Você" && <span className="titulo">{first}</span>}!
         </motion.h1>
         <motion.p className="mt-3 text-lg text-muted" initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.18 }}>
-          Vamos montar a agenda de cuidados do seu cachorro. Leva uns 3 minutos e dá para pular qualquer pergunta.
+          Vamos montar a agenda de cuidados do seu cachorro ou gato. Leva uns 3 minutos e dá para pular qualquer pergunta.
         </motion.p>
       </div>
       <div className="space-y-3">
@@ -57,7 +57,7 @@ export function Welcome() {
           href="/novo-pet"
           className="flex h-16 w-full items-center justify-center gap-2 rounded-full bg-primary text-lg font-extrabold text-on-primary shadow-[0_6px_16px_rgb(43_67_33/0.25)] transition active:scale-[0.97]"
         >
-          <Plus size={22} strokeWidth={3} /> Adicionar meu cachorro
+          <Plus size={22} strokeWidth={3} /> Adicionar meu pet
         </Link>
         {repo.mode === "nuvem" && (
           <Button variant="ghost" className="w-full" onClick={() => setCodeOpen(true)}>

@@ -15,7 +15,7 @@ import { Button } from "../ui/button";
 import { Sheet } from "../ui/sheet";
 import { VaccineCard } from "./vaccine-card";
 
-const ORDER: CareType[] = ["remedio", "vacina", "vermifugo", "antipulgas", "consulta", "outro"];
+const ORDER: CareType[] = ["remedio", "vacina", "vermifugo", "antipulgas", "consulta", "exame", "outro"];
 
 /** Aba Cuidados: Cartão de Vacina no topo + todos os lembretes agrupados por tipo. */
 export function CuidadosScreen() {

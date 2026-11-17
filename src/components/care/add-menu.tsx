@@ -14,7 +14,7 @@ const OPTIONS: { type: CareType; label: string }[] = [
   { type: "remedio", label: "Remédio" },
   { type: "vacina", label: "Vacina" },
   { type: "vermifugo", label: "Vermífugo" },
-  { type: "antipulgas", label: "Antipulgas e carrapato" },
+  { type: "antipulgas", label: "Antipulgas" },
   { type: "consulta", label: "Consulta, cirurgia ou exame" },
   { type: "outro", label: "Lembrete livre" },
 ];
@@ -41,7 +41,7 @@ export function AddMenu({ open, onClose }: { open: boolean; onClose: () => void 
                 onClick={() => {
                   if (!pet) return;
                   onClose();
-                  setDraft(newCareFor(pet.id, o.type));
+                  setDraft(newCareFor(pet.id, o.type, pet.species));
                 }}
                 className={`flex min-h-28 flex-col items-start justify-between rounded-3xl p-4 text-left active:scale-[0.97] ${m.bg}`}
               >

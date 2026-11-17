@@ -43,7 +43,7 @@ function PetSwitcher() {
         onClick={() => setOpen(true)}
         className="mt-3 flex items-center gap-2 rounded-full bg-card py-1 pl-1 pr-3 shadow-card active:scale-95"
       >
-        <PetAvatar url={pet.photoUrl} size={30} />
+        <PetAvatar url={pet.photoUrl} species={pet.species} size={30} />
         <span className="font-bold">{pet.name}</span>
         <ChevronDown size={16} className="text-muted" />
       </button>
@@ -56,7 +56,7 @@ function PetSwitcher() {
               onClick={() => (selectPet(p.id), setOpen(false))}
               className={`flex w-full items-center gap-3 rounded-3xl border-2 p-3 text-left ${p.id === pet.id ? "border-primary bg-primary-soft" : "border-line"}`}
             >
-              <PetAvatar url={p.photoUrl} size={48} />
+              <PetAvatar url={p.photoUrl} species={p.species} size={48} />
               <span className="text-lg font-bold">{p.name}</span>
             </button>
           ))}
@@ -68,7 +68,7 @@ function PetSwitcher() {
             <span className="grid size-12 place-items-center rounded-full bg-primary-soft">
               <Plus size={22} />
             </span>
-            Adicionar outro cachorro
+            Adicionar outro pet
           </button>
         </div>
       </Sheet>

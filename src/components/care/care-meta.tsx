@@ -1,4 +1,4 @@
-import { Bell, Bug, Pill, Stethoscope, Syringe, Tablets, type LucideIcon } from "lucide-react";
+import { Bell, Bug, Microscope, Pill, Stethoscope, Syringe, Tablets, type LucideIcon } from "lucide-react";
 import type { CareType } from "@/lib/types";
 
 /** Nome, ícone e cor de cada tipo de cuidado (iguais em todas as telas). */
@@ -8,6 +8,7 @@ export const CARE_META: Record<CareType, { label: string; plural: string; Icon: 
   vermifugo: { label: "Vermífugo", plural: "Vermífugo", Icon: Tablets, fg: "text-t-vermifugo", bg: "bg-t-vermifugo-soft" },
   antipulgas: { label: "Antipulgas", plural: "Pulgas e carrapatos", Icon: Bug, fg: "text-t-antipulgas", bg: "bg-t-antipulgas-soft" },
   consulta: { label: "Consulta", plural: "Consultas e procedimentos", Icon: Stethoscope, fg: "text-t-consulta", bg: "bg-t-consulta-soft" },
+  exame: { label: "Teste", plural: "Testes e exames", Icon: Microscope, fg: "text-olive", bg: "bg-olive-soft" },
   outro: { label: "Lembrete", plural: "Outros", Icon: Bell, fg: "text-t-outro", bg: "bg-t-outro-soft" },
 };
 

@@ -7,6 +7,7 @@ import type { Repo } from "./types";
 
 type Row = Record<string, unknown>;
 const BUCKET = "fotos-pets";
+const MISSING_005 = "Falta atualizar o banco: rode o arquivo 005_gatos.sql no Supabase.";
 
 function fail(e: unknown): never {
   throw new Error(friendlyError(e));
@@ -45,11 +46,21 @@ function petFromRow(r: Row, role: Role, photoUrl: string | null): Pet {
     foodAmount: (r.racao_qtd as string) ?? null,
     vetName: (r.vet_nome as string) ?? null,
     vetPhone: (r.vet_telefone as string) ?? null,
+    species: (r.especie as Pet["species"]) ?? "cachorro",
+    lifestyle: (r.estilo_vida as Pet["lifestyle"]) ?? null,
+    otherAnimals: (r.outros_animais as Pet["otherAnimals"]) ?? null,
+    felvTest: (r.teste_felv_fiv as Pet["felvTest"]) ?? null,
+    foodType: (r.racao_tipo as Pet["foodType"]) ?? null,
     role,
   };
 }
 
 const PET_COLUMNS: Record<keyof PetFields, string> = {
+  species: "especie",
+  lifestyle: "estilo_vida",
+  otherAnimals: "outros_animais",
+  felvTest: "teste_felv_fiv",
+  foodType: "racao_tipo",
   name: "nome",
   breed: "raca",
   sex: "sexo",
@@ -126,6 +137,7 @@ export function recordFromRow(r: Row): CareRecord {
     by: (r.por as string) ?? null,
     clinic: (r.clinica as string) ?? null,
     labelPhoto: (r.lote_foto as string) ?? null,
+    result: (r.resultado as string) ?? null,
     createdAt: r.criado_em as string,
   };
 }
@@ -195,6 +207,9 @@ export const cloudRepo: Repo = {
   },
 
   async createPet(pet, cares, history) {
+    // Sem o SQL 005, o banco guardaria um gato como cachorro: confere antes de criar
+    const probe = await supabase().from("pets").select("especie").limit(1);
+    if (probe.error && /especie/.test(probe.error.message)) throw new Error(MISSING_005);
     const { data, error } = await supabase().rpc("criar_pet", {
       p: petToRow(pet),
       // o id do pet ainda não existe: o banco preenche (o app manda um provisório)
@@ -203,14 +218,16 @@ export const cloudRepo: Repo = {
         delete row.pet_id;
         return row;
       }),
-      p_registros: history.map((h) => ({ cuidado_id: h.careId, ocorrencia: h.at, feito_em: h.at })),
+      p_registros: history.map((h) => ({ cuidado_id: h.careId, ocorrencia: h.at, feito_em: h.at, resultado: h.result ?? null })),
     });
     if (error) fail(error);
     return data as string;
   },
 
   async updatePet(id, patch) {
-    expectRows(await supabase().from("pets").update(petToRow(patch)).eq("id", id).select("id"));
+    const res = await supabase().from("pets").update(petToRow(patch)).eq("id", id).select("id");
+    if (res.error && /especie|estilo_vida|outros_animais|teste_felv_fiv|racao_tipo/.test(res.error.message)) throw new Error(MISSING_005);
+    expectRows(res);
   },
 
   async setPetPhoto(petId, photo) {
@@ -239,7 +256,9 @@ export const cloudRepo: Repo = {
 
   async saveCare(care) {
     const row = { ...careToRow(care), atualizado_em: new Date().toISOString() };
-    expectRows(await supabase().from("cuidados").upsert(row).select("id"));
+    const res = await supabase().from("cuidados").upsert(row).select("id");
+    if (res.error && /cuidados_tipo_check/.test(res.error.message)) throw new Error(MISSING_005);
+    expectRows(res);
   },
 
   async complete({ care, occurrence, status, doneAt, reason, next, force }) {
@@ -271,7 +290,7 @@ export const cloudRepo: Repo = {
     );
   },
 
-  async addRecord({ care, at, clinic, photo, next }) {
+  async addRecord({ care, at, clinic, photo, next, result }) {
     const me = await uid();
     let path: string | null = null;
     if (photo) {
@@ -283,7 +302,9 @@ export const cloudRepo: Repo = {
     // só manda as colunas novas quando preenchidas (funciona mesmo antes do SQL 002)
     if (clinic) row.clinica = clinic;
     if (path) row.lote_foto = path;
+    if (result) row.resultado = result;
     const res = await supabase().from("registros").insert(row).select("id");
+    if (res.error && /resultado|cuidados_tipo_check/.test(res.error.message)) throw new Error(MISSING_005);
     if (res.error && /clinica|lote_foto/.test(res.error.message)) {
       throw new Error("Falta atualizar o banco: rode o arquivo 002_cartao_vacina.sql no Supabase.");
     }

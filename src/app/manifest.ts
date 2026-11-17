@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "MyPet",
     short_name: "MyPet",
-    description: "O que fazer e quando, para o seu cachorro.",
+    description: "O que fazer e quando, para o seu cachorro ou gato.",
     lang: "pt-BR",
     start_url: "/",
     scope: "/",

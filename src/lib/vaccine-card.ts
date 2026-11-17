@@ -2,17 +2,51 @@
  * Cartão de Vacina: junta as aplicações registradas (feito) de vacinas, vermífugo e antipulgas.
  * Toda vacina marcada como feita (cadastro, botão +, "Feito ✓" ou direto no cartão) entra sozinha.
  */
-import type { Care, CareRecord, CareType, Pet } from "./types";
+import type { Care, CareRecord, CareType, Pet, Species } from "./types";
 import { fmtDate } from "./dates";
 import { normalize } from "./breeds";
 
-export type CardSectionKey = "vacina" | "vermifugo" | "antipulgas";
+export type CardSectionKey = "vacina" | "vermifugo" | "antipulgas" | "polivalente" | "raiva" | "felv" | "testes";
 
-export const CARD_SECTIONS: { key: CardSectionKey; title: string; empty: string }[] = [
-  { key: "vacina", title: "Vacinas", empty: "Nenhuma vacina registrada ainda." },
-  { key: "vermifugo", title: "Vermífugo", empty: "Nenhum vermífugo registrado ainda." },
-  { key: "antipulgas", title: "Pulgas e carrapatos", empty: "Nenhuma proteção registrada ainda." },
+export interface CardSection {
+  key: CardSectionKey;
+  title: string;
+  empty: string;
+  /** Tipo de cuidado de quem entra nesta seção (o "Adicionar registro" usa este tipo). */
+  type: CareType;
+  /** Quais cuidados entram nesta seção. */
+  match: (c: Care) => boolean;
+}
+
+const isRabies = (c: Care) => /raiva|antirr/.test(normalize(c.title));
+const isFelvVaccine = (c: Care) => /felv/.test(normalize(c.title)) && !/teste/.test(normalize(c.title));
+
+export const CARD_SECTIONS: CardSection[] = [
+  { key: "vacina", title: "Vacinas", empty: "Nenhuma vacina registrada ainda.", type: "vacina", match: (c) => c.type === "vacina" },
+  { key: "vermifugo", title: "Vermífugo", empty: "Nenhum vermífugo registrado ainda.", type: "vermifugo", match: (c) => c.type === "vermifugo" },
+  { key: "antipulgas", title: "Pulgas e carrapatos", empty: "Nenhuma proteção registrada ainda.", type: "antipulgas", match: (c) => c.type === "antipulgas" },
 ];
+
+/** Gato: Polivalente, Antirrábica, FeLV, Testes (FeLV/FIV), Vermífugo e Antipulgas. */
+export const CAT_CARD_SECTIONS: CardSection[] = [
+  {
+    key: "polivalente",
+    title: "Polivalente (V3/V4/V5)",
+    empty: "Nenhuma dose registrada ainda.",
+    type: "vacina",
+    // outras vacinas (sem ser antirrábica ou FeLV) também ficam aqui
+    match: (c) => c.type === "vacina" && !isRabies(c) && !isFelvVaccine(c),
+  },
+  { key: "raiva", title: "Antirrábica", empty: "Nenhuma dose registrada ainda.", type: "vacina", match: (c) => c.type === "vacina" && isRabies(c) },
+  { key: "felv", title: "FeLV", empty: "Nenhuma dose registrada ainda.", type: "vacina", match: (c) => c.type === "vacina" && isFelvVaccine(c) },
+  { key: "testes", title: "Testes", empty: "Nenhum teste registrado (FeLV/FIV).", type: "exame", match: (c) => c.type === "exame" },
+  { key: "vermifugo", title: "Vermífugo", empty: "Nenhum vermífugo registrado ainda.", type: "vermifugo", match: (c) => c.type === "vermifugo" },
+  { key: "antipulgas", title: "Antipulgas", empty: "Nenhuma proteção registrada ainda.", type: "antipulgas", match: (c) => c.type === "antipulgas" },
+];
+
+export function cardSections(species: Species | undefined): CardSection[] {
+  return species === "gato" ? CAT_CARD_SECTIONS : CARD_SECTIONS;
+}
 
 export interface CardRow {
   id: string;
@@ -25,10 +59,12 @@ export interface CardRow {
   nextAt: string | null;
   clinic: string | null;
   labelPhoto: string | null;
+  /** Resultado (testes) */
+  result: string | null;
 }
 
 /** Ordem das vacinas no cartão (as outras vêm depois, por nome). */
-const VACCINE_ORDER = ["v8", "v10", "antirrab", "raiva", "gripe", "giard", "leish"];
+const VACCINE_ORDER = ["v8", "v10", "polival", "v3", "v4", "v5", "antirrab", "raiva", "felv", "gripe", "giard", "leish"];
 
 function vaccineRank(title: string) {
   const n = normalize(title);
@@ -41,8 +77,8 @@ export function shortName(care: Care): string {
   return care.type === "vacina" ? care.title.replace(/^vacina\s+/i, "").replace(/^\w/, (c) => c.toUpperCase()) : care.title;
 }
 
-export function cardRows(cares: Care[], records: CareRecord[], section: CardSectionKey): CardRow[] {
-  const sectionCares = cares.filter((c) => c.type === section);
+export function cardRows(cares: Care[], records: CareRecord[], section: CardSection): CardRow[] {
+  const sectionCares = cares.filter(section.match);
   const rows: CardRow[] = [];
   for (const care of sectionCares) {
     const done = records
@@ -58,15 +94,16 @@ export function cardRows(cares: Care[], records: CareRecord[], section: CardSect
         nextAt: last && care.active ? care.nextAt : null,
         clinic: r.clinic ?? null,
         labelPhoto: r.labelPhoto ?? null,
+        result: r.result ?? null,
       });
     });
     // Ainda sem aplicação registrada, mas com próxima dose marcada
     if (!done.length && care.active && care.nextAt) {
-      rows.push({ id: `prox-${care.id}`, care, name: shortName(care), appliedAt: null, nextAt: care.nextAt, clinic: null, labelPhoto: null });
+      rows.push({ id: `prox-${care.id}`, care, name: shortName(care), appliedAt: null, nextAt: care.nextAt, clinic: null, labelPhoto: null, result: null });
     }
   }
   return rows.sort((a, b) => {
-    if (section === "vacina") {
+    if (section.type === "vacina") {
       const r = vaccineRank(a.care.title) - vaccineRank(b.care.title);
       if (r) return r;
       if (a.care.id !== b.care.id) return a.name.localeCompare(b.name);
@@ -77,7 +114,7 @@ export function cardRows(cares: Care[], records: CareRecord[], section: CardSect
 
 export interface CardPage {
   kind: "id" | "section";
-  section?: (typeof CARD_SECTIONS)[number];
+  section?: CardSection;
   rows?: CardRow[];
   /** "Vacinas (2/3)" quando a seção ocupa mais de uma página */
   part?: string;
@@ -86,10 +123,10 @@ export interface CardPage {
 const ROWS_PER_PAGE = 6;
 
 /** Páginas do livreto: identificação + cada seção (quebrando em várias se tiver muitas linhas). */
-export function cardPages(cares: Care[], records: CareRecord[]): CardPage[] {
+export function cardPages(cares: Care[], records: CareRecord[], species?: Species): CardPage[] {
   const pages: CardPage[] = [{ kind: "id" }];
-  for (const s of CARD_SECTIONS) {
-    const rows = cardRows(cares, records, s.key);
+  for (const s of cardSections(species)) {
+    const rows = cardRows(cares, records, s);
     const chunks = Math.max(1, Math.ceil(rows.length / ROWS_PER_PAGE));
     for (let i = 0; i < chunks; i++) {
       pages.push({
@@ -103,7 +140,7 @@ export function cardPages(cares: Care[], records: CareRecord[]): CardPage[] {
   return pages;
 }
 
-export const CARD_TYPES: CareType[] = ["vacina", "vermifugo", "antipulgas"];
+export const CARD_TYPES: CareType[] = ["vacina", "vermifugo", "antipulgas", "exame"];
 
 // ---------------------------------------------------------------------------------------------
 // Exportar como imagem (para mandar ao veterinário)
@@ -126,7 +163,7 @@ export async function cardImage(pet: Pet, cares: Care[], records: CareRecord[]):
   const sans = cssVar("--font-app", "sans-serif");
 
   const W = 1080;
-  const sections = CARD_SECTIONS.map((s) => ({ s, rows: cardRows(cares, records, s.key) }));
+  const sections = cardSections(pet.species).map((s) => ({ s, rows: cardRows(cares, records, s) }));
   const rowH = 64;
   const H = 300 + sections.reduce((t, x) => t + 130 + Math.max(1, x.rows.length) * rowH, 0) + 90;
 
@@ -155,7 +192,8 @@ export async function cardImage(pet: Pet, cares: Care[], records: CareRecord[]):
     y += 50;
     g.fillStyle = ink;
     g.font = `700 24px ${sans}`;
-    ["Nome", "Aplicação", "Próxima", "Clínica"].forEach((h, i) => g.fillText(h.toUpperCase(), cols[i], y));
+    const test = s.type === "exame";
+    (test ? ["Teste", "Data", "Resultado", "Clínica"] : ["Nome", "Aplicação", "Próxima", "Clínica"]).forEach((h, i) => g.fillText(h.toUpperCase(), cols[i], y));
     y += 16;
     g.strokeStyle = line;
     g.lineWidth = 2;
@@ -176,7 +214,7 @@ export async function cardImage(pet: Pet, cares: Care[], records: CareRecord[]):
       g.fillText(fit(g, r.name, 320), cols[0], y);
       g.font = `400 28px ${sans}`;
       g.fillText(r.appliedAt ? fmtDate(r.appliedAt) : "—", cols[1], y);
-      g.fillText(r.nextAt ? fmtDate(r.nextAt) : "—", cols[2], y);
+      g.fillText(test ? (r.result ?? "—") : r.nextAt ? fmtDate(r.nextAt) : "—", cols[2], y);
       g.fillText(fit(g, r.clinic ?? "—", W - 64 - cols[3]), cols[3], y);
       y += rowH - 46;
       g.beginPath();

@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, Bug, Heart, Info, Siren, Syringe, Tablets, Utensils, type LucideIcon } from "lucide-react";
+import { ArrowRight, Bug, Cat, Heart, Info, Microscope, ShieldAlert, Siren, Syringe, Tablets, Utensils, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { ageText } from "@/lib/dates";
-import { GUIDE, WARNING_SIGNS, petPhase, type Phase, type TopicKey } from "@/lib/guide";
+import { CAT_SAFETY, guideFor, petPhase, type Phase, type TopicKey } from "@/lib/guide";
 import { useApp } from "../app-provider";
 import { PetAvatar } from "../shared/pet-avatar";
 import { TabShell } from "../shell/tab-shell";
@@ -14,18 +14,24 @@ const TOPIC_STYLE: Record<TopicKey, { Icon: LucideIcon; fg: string; bg: string }
   vacinas: { Icon: Syringe, fg: "text-t-vacina", bg: "bg-t-vacina-soft" },
   vermifugo: { Icon: Tablets, fg: "text-t-vermifugo", bg: "bg-t-vermifugo-soft" },
   pulgas: { Icon: Bug, fg: "text-t-antipulgas", bg: "bg-t-antipulgas-soft" },
+  testes: { Icon: Microscope, fg: "text-t-vacina", bg: "bg-t-vacina-soft" },
   alimentacao: { Icon: Utensils, fg: "text-olive", bg: "bg-olive-soft" },
   cuidados: { Icon: Heart, fg: "text-t-consulta", bg: "bg-pink-soft" },
 };
 
-/** Aba Guia: orientações por fase (filhote, adulto, idoso), com a fase do pet em destaque. */
+/** Aba Guia: orientações por fase (cachorro: 3 fases; gato: 4), com a fase do pet em destaque. */
 export function GuiaScreen() {
   const { pet } = useApp();
   const current = pet ? petPhase(pet) : null;
-  const [phase, setPhase] = useState<Phase>(current ?? "adulto");
+  const guide = guideFor(pet?.species);
+  const [chosen, setPhase] = useState<Phase | null>(null);
   if (!pet) return null;
+  const GUIDE = guide.phases;
+  // Fase escolhida (se for da espécie deste pet); senão, a fase atual dele
+  const phase = chosen && GUIDE.some((g) => g.key === chosen) ? chosen : (current ?? guide.fallback);
   const data = GUIDE.find((g) => g.key === phase)!;
   const isCurrent = phase === current;
+  const cat = pet.species === "gato";
 
   return (
     <TabShell title={<h1 className="titulo pb-4 pt-6 text-4xl">Guia</h1>}>
@@ -33,12 +39,17 @@ export function GuiaScreen() {
       <div className="sticky top-2 z-10 -mx-1 mb-5">
         <p className="flex items-center gap-2 rounded-2xl bg-olive-soft px-4 py-2.5 text-sm font-semibold text-forest shadow-card">
           <Info size={18} className="shrink-0 text-olive" />
-          Informações gerais. Siga sempre a orientação do seu veterinário.
+          {guide.disclaimer}
         </p>
       </div>
 
       {/* Fases */}
-      <div className="grid grid-cols-3 gap-1 rounded-full bg-card p-1 shadow-card" role="tablist" aria-label="Fase da vida">
+      <div
+        className="grid gap-1 rounded-full bg-card p-1 shadow-card"
+        style={{ gridTemplateColumns: `repeat(${GUIDE.length}, minmax(0, 1fr))` }}
+        role="tablist"
+        aria-label="Fase da vida"
+      >
         {GUIDE.map((g) => {
           const sel = g.key === phase;
           return (
@@ -54,7 +65,7 @@ export function GuiaScreen() {
                 <motion.span layoutId="guia-fase" className="absolute inset-0 rounded-full bg-forest" transition={{ type: "spring", stiffness: 420, damping: 34 }} />
               )}
               <span className={`relative ${sel ? "text-pink" : "text-forest"}`}>
-                {g.label}
+                {g.short ?? g.label}
                 {g.key === current && <span className={`ml-1 inline-block size-1.5 -translate-y-0.5 rounded-full ${sel ? "bg-pink" : "bg-pink-strong"}`} aria-label="fase do seu pet" />}
               </span>
             </button>
@@ -62,7 +73,7 @@ export function GuiaScreen() {
         })}
       </div>
       {!current && (
-        <p className="mt-2 px-2 text-sm text-muted">Sem a idade de {pet.name}, mostramos a fase adulta. Dá para trocar acima.</p>
+        <p className="mt-2 px-2 text-sm text-muted">Sem a idade de {pet.name}, mostramos a fase {cat ? "adulta jovem" : "adulta"}. Dá para trocar acima.</p>
       )}
 
       <AnimatePresence mode="wait" initial={false}>
@@ -80,7 +91,7 @@ export function GuiaScreen() {
             <p className="mt-2 text-pink-soft/90">{data.intro}</p>
             {isCurrent && (
               <div className="mt-4 flex items-center gap-3 rounded-2xl bg-pink/15 p-2.5 pr-4">
-                <PetAvatar url={pet.photoUrl} size={40} />
+                <PetAvatar url={pet.photoUrl} species={pet.species} size={40} />
                 <p className="text-sm">
                   <b className="text-pink">{pet.name}</b> está nesta fase
                   {ageText(pet.birth) ? ` · ${ageText(pet.birth)}` : ""}
@@ -88,6 +99,8 @@ export function GuiaScreen() {
               </div>
             )}
           </section>
+
+          {cat && <CatSafety />}
 
           {/* Assuntos */}
           <div className="mt-4 space-y-3">
@@ -137,7 +150,7 @@ export function GuiaScreen() {
                 <span className="text-lg font-bold text-forest">Quando correr para o veterinário</span>
               </h2>
               <ul className="mt-3 space-y-2">
-                {WARNING_SIGNS.map((w) => (
+                {guide.warnings.map((w) => (
                   <li key={w} className="flex gap-3 text-[15px] leading-snug text-ink">
                     <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-danger" />
                     {w}
@@ -149,5 +162,35 @@ export function GuiaScreen() {
         </motion.div>
       </AnimatePresence>
     </TabShell>
+  );
+}
+
+/** Gatos: cartões fixos de segurança (antipulgas de cachorro e cuidados básicos da casa). */
+function CatSafety() {
+  return (
+    <div className="mt-4 space-y-3">
+      <section className="flex items-start gap-3 rounded-3xl border-2 border-danger/30 bg-danger-soft p-4">
+        <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-card text-danger">
+          <ShieldAlert size={22} strokeWidth={2.2} />
+        </span>
+        <p className="text-[15px] font-bold leading-snug text-forest">{CAT_SAFETY.danger}</p>
+      </section>
+      <section className="rounded-3xl bg-card p-5 shadow-card">
+        <h2 className="flex items-center gap-3">
+          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-olive-soft text-olive">
+            <Cat size={22} strokeWidth={2.2} />
+          </span>
+          <span className="text-lg font-bold text-forest">Cuidados básicos da casa</span>
+        </h2>
+        <ul className="mt-3 space-y-2">
+          {CAT_SAFETY.basics.map((item) => (
+            <li key={item} className="flex gap-3 text-[15px] leading-snug text-ink">
+              <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-pink-strong" />
+              {item}
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
   );
 }

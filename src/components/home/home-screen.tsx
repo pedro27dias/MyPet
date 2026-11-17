@@ -11,7 +11,7 @@ import { CareIcon } from "../care/care-meta";
 import { CareFormSheet } from "../care/care-form";
 import { PetAvatar } from "../shared/pet-avatar";
 import { TabShell } from "../shell/tab-shell";
-import { LogoMark } from "../shell/logo-mark";
+import { PetMark } from "../shared/species";
 import { TaskRow } from "./task-row";
 import { AlreadyDoneSheet, EditTimeSheet, TaskMenuSheet } from "./task-sheets";
 import { useTaskActions } from "./use-task-actions";
@@ -56,7 +56,7 @@ export function HomeScreen() {
       title={
         <header className="pb-6 pt-4">
           <div className="flex items-center gap-2 text-forest">
-            <LogoMark plain size={40} />
+            <PetMark species={pet.species} size={40} />
             <span className="titulo text-xl">MyPet</span>
           </div>
           <div className="mt-5 flex items-center justify-between gap-4">
@@ -78,7 +78,7 @@ export function HomeScreen() {
                       : "Tudo em dia por aqui"}
               </p>
             </div>
-            <PetAvatar url={pet.photoUrl} size={72} ring />
+            <PetAvatar url={pet.photoUrl} species={pet.species} size={72} ring />
           </div>
         </header>
       }

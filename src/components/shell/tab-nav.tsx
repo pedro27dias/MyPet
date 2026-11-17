@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
-import { BookOpen, Dog, House, ListChecks, Plus } from "lucide-react";
+import { BookOpen, Cat, Dog, House, ListChecks, Plus } from "lucide-react";
 import { useState } from "react";
 import { AddMenu } from "../care/add-menu";
+import { useApp } from "../app-provider";
 
 const TABS = [
   { href: "/", label: "Início", Icon: House },
@@ -21,12 +22,15 @@ const TABS = [
 export function TabNav() {
   const pathname = usePathname();
   const [addOpen, setAddOpen] = useState(false);
+  const { pet } = useApp();
+  // aba Pet: gato ou cachorro, conforme o pet escolhido
+  const tabs = TABS.map((t) => (t.href === "/pet" && pet?.species === "gato" ? { ...t, Icon: Cat } : t));
 
   return (
     <>
       <nav className="pb-safe pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4" aria-label="Menu">
         <div className="pointer-events-auto relative mx-auto grid h-16 max-w-sm grid-cols-5 items-center rounded-full bg-forest px-2 shadow-float">
-          {TABS.slice(0, 2).map((t) => (
+          {tabs.slice(0, 2).map((t) => (
             <TabLink key={t.href} {...t} active={pathname === t.href} />
           ))}
           <div className="flex justify-center">
@@ -43,7 +47,7 @@ export function TabNav() {
               <Plus size={30} strokeWidth={2.75} />
             </motion.button>
           </div>
-          {TABS.slice(2).map((t) => (
+          {tabs.slice(2).map((t) => (
             <TabLink key={t.href} {...t} active={pathname === t.href} />
           ))}
         </div>

@@ -4,8 +4,16 @@ export type Sex = "macho" | "femea";
 export type Size = "pequeno" | "medio" | "grande" | "gigante";
 export type Origin = "adotado" | "resgatado" | "comprado" | "presente" | "outro";
 export type Role = "principal" | "tutor";
+export type Species = "cachorro" | "gato";
+/** Gato: só dentro de casa / sai às vezes / sai sempre */
+export type Lifestyle = "dentro" | "as_vezes" | "sempre";
+export type OtherAnimal = "gatos" | "cachorros" | "nenhum";
+/** Teste de FeLV/FIV (gatos) */
+export type FelvTest = "negativo" | "positivo" | "nao_fez" | "nao_sei";
+export type FoodType = "seca" | "umida" | "mista";
 
 export interface PetFields {
+  species: Species;
   name: string;
   breed: string | null;
   sex: Sex | null;
@@ -22,6 +30,11 @@ export interface PetFields {
   foodAmount: string | null;
   vetName: string | null;
   vetPhone: string | null;
+  // Só gatos (null nos cachorros)
+  lifestyle: Lifestyle | null;
+  otherAnimals: OtherAnimal[] | null;
+  felvTest: FelvTest | null;
+  foodType: FoodType | null;
 }
 
 export interface Pet extends PetFields {
@@ -32,7 +45,8 @@ export interface Pet extends PetFields {
   role: Role;
 }
 
-export type CareType = "remedio" | "vacina" | "vermifugo" | "antipulgas" | "consulta" | "outro";
+/** exame = testes com resultado (ex.: FeLV/FIV dos gatos); aparecem no cartão de vacina. */
+export type CareType = "remedio" | "vacina" | "vermifugo" | "antipulgas" | "consulta" | "exame" | "outro";
 
 /**
  * unica = uma vez · horas/diaria/semanal/dias = horários fixos (remédios) ·
@@ -80,6 +94,8 @@ export interface CareRecord {
   clinic?: string | null;
   /** Foto da etiqueta/lote: caminho no Storage (ou a imagem, no modo demonstração). */
   labelPhoto?: string | null;
+  /** Resultado de exame/teste (ex.: "Negativo"). */
+  result?: string | null;
   createdAt: string;
 }
 

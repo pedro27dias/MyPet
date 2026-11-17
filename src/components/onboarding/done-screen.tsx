@@ -5,6 +5,7 @@ import { AnimatedCheck } from "../shared/animated-check";
 import { InviteCard } from "../shared/invite-card";
 import { PetAvatar } from "../shared/pet-avatar";
 import { Button } from "../ui/button";
+import type { Species } from "@/lib/types";
 
 /** "Criamos a agenda da Mel!" */
 export function DoneScreen({
@@ -13,6 +14,7 @@ export function DoneScreen({
   count,
   invite,
   photo,
+  species,
   warning,
   mode,
   onFinish,
@@ -23,6 +25,7 @@ export function DoneScreen({
   count: number;
   invite: string | null;
   photo: string | null;
+  species: Species | null;
   warning: string | null;
   mode: "nuvem" | "demo";
   onFinish: () => void;
@@ -31,7 +34,7 @@ export function DoneScreen({
     <main className="pt-safe mx-auto flex min-h-dvh max-w-md flex-col px-6 pb-10">
       <div className="flex flex-1 flex-col items-center justify-center text-center">
         <div className="relative">
-          <PetAvatar url={photo} size={120} />
+          <PetAvatar url={photo} size={120} species={species} />
           <span className="absolute -bottom-2 -right-2">
             <AnimatedCheck size={52} />
           </span>

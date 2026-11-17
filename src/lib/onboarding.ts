@@ -3,7 +3,7 @@
  * As sugestões são pontos de partida comuns; tudo é editável e o app sempre lembra de
  * seguir a orientação do veterinário.
  */
-import type { Care, CareType, Freq, Origin, PetFields, Sex, Size } from "./types";
+import type { Care, CareType, FelvTest, FoodType, Freq, Lifestyle, Origin, OtherAnimal, PetFields, Sex, Size, Species } from "./types";
 import { addDays, addMonths, ageInDays, atTime, birthFromAge, parseDate, startOfDay, toDateStr, todayStr } from "./dates";
 
 export type VaccineKey = "v10" | "raiva" | "gripe" | "giardia" | "leish";
@@ -15,6 +15,19 @@ export const VACCINES: { key: VaccineKey; label: string; hint: string }[] = [
   { key: "giardia", label: "Giárdia", hint: "" },
   { key: "leish", label: "Leishmaniose", hint: "" },
 ];
+
+export type CatVaccineKey = "polivalente" | "raiva" | "felv";
+
+/** Vacinas de gato (a antirrábica usa a mesma chave "raiva" do cachorro). */
+export const CAT_VACCINES: { key: CatVaccineKey; label: string; hint: string }[] = [
+  { key: "polivalente", label: "V3, V4 ou V5", hint: "Polivalente" },
+  { key: "raiva", label: "Antirrábica", hint: "Raiva" },
+  { key: "felv", label: "FeLV", hint: "Leucemia felina (dose isolada)" },
+];
+
+export function vaccinesFor(species: Species | null | undefined): { key: VaccineKey | CatVaccineKey; label: string; hint: string }[] {
+  return species === "gato" ? CAT_VACCINES : VACCINES;
+}
 
 export type FleaMethod = "coleira" | "comprimido" | "pipeta" | "nenhuma";
 
@@ -29,6 +42,8 @@ export interface MedAnswer {
 }
 
 export interface Answers {
+  /** null = ainda não respondeu (pular = cachorro) */
+  species: Species | null;
   name: string;
   photo: Blob | null;
   photoPreview: string | null;
@@ -49,16 +64,21 @@ export interface Answers {
   allergy: string;
   usesMed: boolean | null;
   med: MedAnswer;
-  vaccines: Record<VaccineKey, { done: boolean; last: string }>;
+  vaccines: Record<VaccineKey | CatVaccineKey, { done: boolean; last: string }>;
   dewormer: { last: string; product: string };
   flea: { method: FleaMethod | null; last: string };
-  food: { brand: string; amount: string };
+  food: { brand: string; amount: string; type: FoodType | null };
+  // Só gatos
+  lifestyle: Lifestyle | null;
+  otherAnimals: OtherAnimal[];
+  felv: { test: FelvTest | null; date: string };
   vet: { name: string; phone: string };
   inviteTutor: boolean | null;
 }
 
 export function emptyAnswers(): Answers {
   return {
+    species: null,
     name: "",
     photo: null,
     photoPreview: null,
@@ -84,14 +104,21 @@ export function emptyAnswers(): Answers {
       gripe: { done: false, last: "" },
       giardia: { done: false, last: "" },
       leish: { done: false, last: "" },
+      polivalente: { done: false, last: "" },
+      felv: { done: false, last: "" },
     },
     dewormer: { last: "", product: "" },
     flea: { method: null, last: "" },
-    food: { brand: "", amount: "" },
+    food: { brand: "", amount: "", type: null },
     vet: { name: "", phone: "" },
     inviteTutor: null,
+    lifestyle: null,
+    otherAnimals: [],
+    felv: { test: null, date: "" },
   };
 }
+
+export const isCat = (a: Pick<Answers, "species">) => a.species === "gato";
 
 const clean = (s: string) => (s.trim() ? s.trim() : null);
 
@@ -103,13 +130,19 @@ export function answersBirth(a: Answers): { birth: string | null; approx: boolea
 
 export function toPetFields(a: Answers): PetFields {
   const { birth, approx } = answersBirth(a);
+  const cat = isCat(a);
   return {
+    species: cat ? "gato" : "cachorro",
+    lifestyle: cat ? a.lifestyle : null,
+    otherAnimals: cat && a.otherAnimals.length ? a.otherAnimals : null,
+    felvTest: cat ? a.felv.test : null,
+    foodType: cat ? a.food.type : null,
     name: a.name.trim(),
     breed: a.breed,
     sex: a.sex,
     birth,
     birthApprox: approx,
-    size: a.size,
+    size: cat ? null : a.size,
     origin: a.origin,
     neutered: a.neutered === "sim" ? true : a.neutered === "nao" ? false : null,
     diseases: a.hasDisease ? clean(a.disease) ?? "Sim" : null,
@@ -174,6 +207,7 @@ function datedCare(petId: string, type: CareType, title: string, freq: Freq, int
 
 /** Monta a agenda sugerida. petId pode ser provisório (o app gera o id antes de gravar). */
 export function suggestCares(a: Answers, petId: string): Suggestion[] {
+  if (isCat(a)) return suggestCatCares(a, petId);
   const today = startOfDay(new Date());
   const { birth } = answersBirth(a);
   const ageDays = ageInDays(birth);
@@ -249,18 +283,8 @@ export function suggestCares(a: Answers, petId: string): Suggestion[] {
     out.push({ care, reason: "Sem proteção hoje: vale escolher uma com o veterinário.", enabled: false, lastDone: null });
   }
 
-  // Remédio contínuo
-  if (a.usesMed && a.med.name.trim()) {
-    const c = blankCare(petId, "remedio", a.med.name.trim());
-    c.detail = clean(a.med.dose);
-    c.freq = a.med.freq;
-    c.interval = Math.max(1, a.med.interval || 1);
-    c.times = a.med.times.length ? a.med.times : ["08:00"];
-    c.start = a.med.start || todayStr();
-    c.end = a.med.end || null;
-    c.nextAt = a.med.freq === "unica" ? atTime(c.start, c.times[0]).toISOString() : null;
-    out.push({ care: c, reason: "Remédio contínuo informado no cadastro.", enabled: true, lastDone: null });
-  }
+  const med = medSuggestion(a, petId);
+  if (med) out.push(med);
 
   // Check-up
   if (!puppy) {
@@ -274,4 +298,186 @@ export function suggestCares(a: Answers, petId: string): Suggestion[] {
   }
 
   return out;
+}
+
+/** Remédio contínuo informado no cadastro (cachorro ou gato). */
+function medSuggestion(a: Answers, petId: string): Suggestion | null {
+  if (!a.usesMed || !a.med.name.trim()) return null;
+  const c = blankCare(petId, "remedio", a.med.name.trim());
+  c.detail = clean(a.med.dose);
+  c.freq = a.med.freq;
+  c.interval = Math.max(1, a.med.interval || 1);
+  c.times = a.med.times.length ? a.med.times : ["08:00"];
+  c.start = a.med.start || todayStr();
+  c.end = a.med.end || null;
+  c.nextAt = a.med.freq === "unica" ? atTime(c.start, c.times[0]).toISOString() : null;
+  return { care: c, reason: "Remédio contínuo informado no cadastro.", enabled: true, lastDone: null };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Gatos (pontos de partida das diretrizes WSAVA, AAHA/AAFP e ESCCAP; tudo editável)
+// ---------------------------------------------------------------------------------------------
+
+/** Gato sênior a partir de 10 anos. */
+export const CAT_SENIOR_YEARS = 10;
+
+export const FLEA_CAT_NOTE = "Use apenas produto indicado para gatos.";
+
+function suggestCatCares(a: Answers, petId: string): Suggestion[] {
+  const today = startOfDay(new Date());
+  const { birth } = answersBirth(a);
+  const born = birth ? parseDate(birth) : null;
+  const ageDays = ageInDays(birth);
+  const kitten = ageDays !== null && ageDays < 120; // até ~16 semanas: série de vacinas
+  const young = ageDays !== null && ageDays < 183; // até 6 meses
+  const weaning = ageDays !== null && ageDays < 56; // até ~8 semanas
+  const senior = ageDays !== null && ageDays >= CAT_SENIOR_YEARS * 365;
+  const goesOut = a.lifestyle === "as_vezes" || a.lifestyle === "sempre";
+  const out: Suggestion[] = [];
+  const push = (care: Care, reason: string, late: boolean, lastDone: string | null, enabled = true) =>
+    out.push({ care, reason: late ? `Já venceu. ${reason}` : reason, enabled, lastDone });
+
+  // Polivalente (V3/V4/V5): sempre
+  {
+    const ans = a.vaccines.polivalente;
+    const last = ans.done && ans.last ? parseDate(ans.last) : null;
+    let date: Date;
+    let reason: string;
+    if (kitten) {
+      date = last ? addDays(last, 21) : born ? addDays(born, 56) : today;
+      reason = last
+        ? "Filhote: próxima dose da série 3 a 4 semanas depois da última, até 16 semanas ou mais."
+        : "Filhote: a série começa entre 6 e 8 semanas de vida.";
+    } else if (last) {
+      date = addMonths(last, 12);
+      reason = "Reforço a partir da última dose. O veterinário pode espaçar conforme o risco.";
+    } else {
+      date = addDays(today, 7);
+      reason = ans.done ? "Sem a data da última dose: confirme com o veterinário." : "Não sabemos de dose anterior: vale marcar com o veterinário.";
+    }
+    const { date: d, late } = notBefore(date, today);
+    const care = datedCare(petId, "vacina", "Vacina polivalente", "anos", 1, d);
+    care.detail = "V3, V4 ou V5";
+    if (kitten) care.note = "Filhote: doses a cada 3–4 semanas até 16 semanas ou mais, e um reforço por volta dos 6 meses. Ajuste com o veterinário.";
+    push(care, reason, late, ans.done && ans.last ? ans.last : null);
+
+    // Reforço por volta dos 6 meses (filhote com data de nascimento)
+    if (kitten && born) {
+      const r = datedCare(petId, "vacina", "Vacina polivalente (reforço dos 6 meses)", "unica", 1, addMonths(born, 6));
+      r.detail = "V3, V4 ou V5";
+      push(r, "Reforço da polivalente por volta dos 6 meses de vida.", false, null);
+    }
+  }
+
+  // Antirrábica: sempre (a partir de 12 semanas; depois anual)
+  {
+    const ans = a.vaccines.raiva;
+    const last = ans.done && ans.last ? parseDate(ans.last) : null;
+    let date: Date;
+    let reason: string;
+    if (kitten && !last) {
+      date = born ? addDays(born, 84) : addDays(today, 30);
+      reason = "A antirrábica é dada a partir de 12 semanas de vida.";
+    } else if (last) {
+      date = addMonths(last, 12);
+      reason = "Reforço uma vez por ano, a partir da última dose.";
+    } else {
+      date = addDays(today, 7);
+      reason = ans.done ? "Sem a data da última dose: confirme com o veterinário." : "Não sabemos de dose anterior: vale marcar com o veterinário.";
+    }
+    const { date: d, late } = notBefore(date, today);
+    push(datedCare(petId, "vacina", "Vacina antirrábica", "anos", 1, d), reason, late, ans.done && ans.last ? ans.last : null);
+  }
+
+  // FeLV isolada: só se já foi feita
+  if (a.vaccines.felv.done) {
+    const ans = a.vaccines.felv;
+    const last = ans.last ? parseDate(ans.last) : null;
+    const date = last ? addMonths(last, 12) : addDays(today, 7);
+    const { date: d, late } = notBefore(date, today);
+    push(
+      datedCare(petId, "vacina", "Vacina FeLV", "anos", 1, d),
+      last ? "Reforço conforme o veterinário (mais importante para quem sai de casa ou convive com outros gatos)." : "Sem a data da última dose: confirme com o veterinário.",
+      late,
+      ans.last || null,
+    );
+  }
+
+  // Teste FeLV/FIV: se não fez (ou não sabe), conversar com o vet
+  if (a.felv.test === "nao_fez" || a.felv.test === "nao_sei") {
+    const care = datedCare(petId, "consulta", "Conversar com o vet sobre teste FeLV/FIV", "unica", 1, addDays(today, 14));
+    push(care, "O teste mostra se o gato tem FeLV ou FIV, doenças que passam entre gatos.", false, null);
+  }
+
+  // Vermífugo
+  {
+    const last = a.dewormer.last ? parseDate(a.dewormer.last) : null;
+    let interval: number;
+    let base: string;
+    let first: Date;
+    if (weaning) {
+      interval = 1;
+      base = "Filhote: a partir de 3 semanas, a cada 2 semanas até o desmame; depois, todo mês até os 6 meses.";
+      first = last ? addDays(last, 14) : born ? addDays(born, 21) : addDays(today, 3);
+    } else if (young) {
+      interval = 1;
+      base = "Filhote: todo mês até os 6 meses.";
+      first = last ? addMonths(last, 1) : addDays(today, 3);
+    } else if (a.lifestyle === "dentro") {
+      interval = 6;
+      base = "Só dentro de casa: 1 a 2 vezes por ano costuma bastar.";
+      first = last ? addMonths(last, 6) : addDays(today, 3);
+    } else {
+      interval = 3;
+      base = goesOut ? "Sai para a rua ou caça: a cada 1 a 3 meses." : "A cada 3 meses é um bom começo; ajuste com o veterinário.";
+      first = last ? addMonths(last, 3) : addDays(today, 3);
+    }
+    const { date: d, late } = notBefore(first, today);
+    const care = datedCare(petId, "vermifugo", "Vermífugo", "meses", interval, d);
+    care.detail = clean(a.dewormer.product);
+    if (weaning) care.note = "Até o desmame (~8 semanas), o comum é a cada 2 semanas. Ajuste com o veterinário.";
+    push(care, last || late ? base : `Sem data do último. ${base}`, late, a.dewormer.last || null);
+  }
+
+  // Pulgas (sempre produto para gatos)
+  if (a.flea.method && a.flea.method !== "nenhuma") {
+    const months = a.flea.method === "coleira" ? 6 : 1;
+    const last = a.flea.last ? parseDate(a.flea.last) : null;
+    const date = last ? addMonths(last, months) : addDays(today, 3);
+    const { date: d, late } = notBefore(date, today);
+    const title = a.flea.method === "coleira" ? "Trocar coleira antipulgas" : a.flea.method === "comprimido" ? "Comprimido antipulgas" : "Pipeta antipulgas";
+    const care = datedCare(petId, "antipulgas", title, "meses", months, d);
+    care.note = FLEA_CAT_NOTE;
+    push(care, `${months === 1 ? "Todo mês" : `A cada ${months} meses`}: confira na embalagem. ${FLEA_CAT_NOTE}`, late, a.flea.last || null);
+  } else if (a.flea.method === "nenhuma") {
+    const care = datedCare(petId, "antipulgas", "Proteção contra pulgas", "meses", 1, addDays(today, 7));
+    care.note = FLEA_CAT_NOTE;
+    push(care, `Sem proteção hoje: escolha com o veterinário. ${FLEA_CAT_NOTE}`, false, null, goesOut);
+  }
+
+  const med = medSuggestion(a, petId);
+  if (med) out.push(med);
+
+  // Check-up: anual; a cada 6 meses a partir de 10 anos
+  if (!kitten) {
+    const care = datedCare(petId, "consulta", "Check-up no veterinário", senior ? "meses" : "anos", senior ? 6 : 1, addDays(today, 30));
+    push(
+      care,
+      senior ? "A partir dos 10 anos, o comum é um check-up a cada 6 meses, com exames de rotina." : "Uma consulta de rotina por ano ajuda a prevenir problemas.",
+      false,
+      null,
+    );
+  }
+
+  return out;
+}
+
+/** Teste FeLV/FIV já feito: vira um registro no cartão (seção Testes), com o resultado. */
+export function felvTestRecord(a: Answers, petId: string): { care: Care; at: string; result: string } | null {
+  if (!isCat(a) || (a.felv.test !== "negativo" && a.felv.test !== "positivo")) return null;
+  const care = blankCare(petId, "exame", "Teste FeLV/FIV");
+  care.nextAt = null;
+  care.active = false;
+  const day = a.felv.date || todayStr();
+  return { care, at: atTime(day, "09:00").toISOString(), result: a.felv.test === "negativo" ? "Negativo" : "Positivo" };
 }

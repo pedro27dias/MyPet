@@ -25,6 +25,10 @@ const SECTIONS = [
 ] as const;
 
 const SIZE = { pequeno: "Pequeno", medio: "Médio", grande: "Grande", gigante: "Gigante" };
+const LIFESTYLE = { dentro: "Só dentro de casa", as_vezes: "Sai às vezes", sempre: "Sai sempre" };
+const OTHERS = { gatos: "Outros gatos", cachorros: "Cachorros", nenhum: "Nenhum" };
+const FELV = { negativo: "Negativo", positivo: "Positivo", nao_fez: "Não fez", nao_sei: "Não sabe" };
+const FOOD = { seca: "Seca", umida: "Úmida", mista: "Mista" };
 const ORIGIN = { adotado: "Adotado (lar/ONG)", resgatado: "Resgatado da rua", comprado: "Comprado", presente: "Ganhou de presente", outro: "Outro" };
 
 /** Aba Pet: Perfil (dados e foto), Gastos (total do mês, por categoria, lista) e Tutores (convite). */
@@ -40,16 +44,25 @@ export function PetScreen() {
   const [tab, setTab] = useState<(typeof SECTIONS)[number]["key"]>("perfil");
   if (!pet) return null;
 
+  const cat = pet.species === "gato";
   const rows: [string, string | null][] = [
+    ["Espécie", cat ? "Gato" : "Cachorro"],
     ["Raça", pet.breed],
     ["Sexo", pet.sex === "femea" ? "Fêmea" : pet.sex === "macho" ? "Macho" : null],
     ["Idade", pet.birth ? `${ageText(pet.birth) ?? "—"}${pet.birthApprox ? " (aprox.)" : ` · nasceu em ${fmtDate(pet.birth)}`}` : null],
-    ["Porte", pet.size ? SIZE[pet.size] : null],
+    ...(cat ? [] : ([["Porte", pet.size ? SIZE[pet.size] : null]] as [string, string | null][])),
     ["Origem", pet.origin ? ORIGIN[pet.origin] : null],
     ["Castrado(a)", pet.neutered === null ? null : pet.neutered ? "Sim" : "Não"],
+    ...(cat
+      ? ([
+          ["Rotina", pet.lifestyle ? LIFESTYLE[pet.lifestyle] : null],
+          ["Mora com", pet.otherAnimals?.length ? pet.otherAnimals.map((o) => OTHERS[o]).join(", ") : null],
+          ["Teste FeLV/FIV", pet.felvTest ? FELV[pet.felvTest] : null],
+        ] as [string, string | null][])
+      : []),
     ["Doença de base", pet.diseases],
     ["Alergias", pet.allergies],
-    ["Ração", [pet.foodBrand, pet.foodAmount].filter(Boolean).join(" · ") || null],
+    ["Ração", [cat && pet.foodType ? FOOD[pet.foodType] : null, pet.foodBrand, pet.foodAmount].filter(Boolean).join(" · ") || null],
     ["Veterinário", pet.vetName],
   ];
 
@@ -93,7 +106,7 @@ export function PetScreen() {
     <TabShell>
       <div className="flex flex-col items-center pt-6 text-center">
         <button type="button" onClick={() => fileRef.current?.click()} className="relative" aria-label="Trocar foto" disabled={photoBusy}>
-          <PetAvatar url={pet.photoUrl} size={112} ring />
+          <PetAvatar url={pet.photoUrl} species={pet.species} size={112} ring />
           <span className="absolute bottom-0 right-0 grid size-9 place-items-center rounded-full bg-forest text-pink ring-4 ring-bg">
             <Camera size={16} />
           </span>
@@ -140,7 +153,7 @@ export function PetScreen() {
               </div>
               <div className="mt-8 space-y-2">
                 <Button variant="outline" className="w-full" onClick={() => router.push("/novo-pet")}>
-                  <Plus size={18} /> Adicionar outro cachorro
+                  <Plus size={18} /> Adicionar outro pet
                 </Button>
                 <Button variant="ghost" className="w-full" onClick={signOut}>
                   <LogOut size={18} /> {repo.mode === "demo" ? "Sair do modo demonstração" : "Sair da conta"}

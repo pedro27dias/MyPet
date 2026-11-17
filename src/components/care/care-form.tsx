@@ -4,7 +4,8 @@ import { useState } from "react";
 import { blankCare } from "@/lib/onboarding";
 import { atTime, fmtTime, toDateStr, todayStr } from "@/lib/dates";
 import { isAnchored } from "@/lib/schedule";
-import type { Care, CareType, Freq } from "@/lib/types";
+import { FLEA_CAT_NOTE } from "@/lib/onboarding";
+import type { Care, CareType, Freq, Species } from "@/lib/types";
 import { useApp } from "../app-provider";
 import { Button } from "../ui/button";
 import { Pills, Stepper, TextField, TimeList } from "../ui/fields";
@@ -12,6 +13,7 @@ import { Sheet } from "../ui/sheet";
 import { useToast } from "../ui/toast";
 import { MED_FREQS } from "../onboarding/steps";
 import { CARE_META, CareIcon } from "./care-meta";
+import { FleaSafetyNote } from "./flea-safety";
 
 /*
  * Formulário de um cuidado (novo ou editar). Remédio usa horários fixos; os outros usam uma data
@@ -24,6 +26,7 @@ const DEFAULT_TITLE: Record<CareType, string> = {
   vermifugo: "Vermífugo",
   antipulgas: "Antipulgas",
   consulta: "Consulta",
+  exame: "Teste FeLV/FIV",
   outro: "",
 };
 
@@ -39,8 +42,10 @@ const REPEAT_OPTIONS: { value: string; label: string }[] = [
 
 const CONSULT_KINDS = ["Consulta", "Cirurgia", "Exame", "Banho e tosa"];
 
-export function newCareFor(petId: string, type: CareType): Care {
-  const c = blankCare(petId, type, DEFAULT_TITLE[type]);
+export function newCareFor(petId: string, type: CareType, species?: Species): Care {
+  const cat = species === "gato";
+  const c = blankCare(petId, type, cat && type === "vacina" ? "Vacina polivalente" : DEFAULT_TITLE[type]);
+  if (cat && type === "antipulgas") c.note = FLEA_CAT_NOTE;
   if (type === "remedio") {
     c.freq = "diaria";
     c.times = ["08:00"];
@@ -85,8 +90,9 @@ export function CareFormSheet({ care, open, onClose }: { care: Care | null; open
 }
 
 function CareForm({ initial, onDone }: { initial: Care; onDone: () => void }) {
-  const { repo, cares, reloadData } = useApp();
+  const { repo, cares, reloadData, pets } = useApp();
   const toast = useToast();
+  const species = pets.find((p) => p.id === initial.petId)?.species ?? "cachorro";
   const isNew = !cares.some((c) => c.id === initial.id);
   const [c, setC] = useState<Care>(initial);
   const [date, setDate] = useState(initial.nextAt ? toDateStr(new Date(initial.nextAt)) : initial.start || todayStr());
@@ -149,6 +155,7 @@ function CareForm({ initial, onDone }: { initial: Care; onDone: () => void }) {
         placeholder={med ? "Ex.: Apoquel" : c.type === "outro" ? "Ex.: Cortar as unhas" : ""}
         autoFocus={isNew && !c.title}
       />
+      {c.type === "antipulgas" && <FleaSafetyNote species={species} />}
       {c.type !== "outro" && (
         <TextField
           label={med ? "Dose" : c.type === "consulta" ? "Local" : "Produto (opcional)"}

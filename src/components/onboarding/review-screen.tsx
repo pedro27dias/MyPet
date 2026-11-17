@@ -6,12 +6,14 @@ import { useState } from "react";
 import { answersBirth, type Answers, type Suggestion } from "@/lib/onboarding";
 import { ageText, atTime, fmtDate, toDateStr } from "@/lib/dates";
 import { freqText, isAnchored } from "@/lib/schedule";
+import { DISCLAIMER, DISCLAIMER_CAT } from "@/lib/guide";
 import { CareIcon } from "../care/care-meta";
 import { PetAvatar } from "../shared/pet-avatar";
 import { Button } from "../ui/button";
 import { TextField } from "../ui/fields";
 
 const SIZE_LABEL = { pequeno: "Pequeno", medio: "Médio", grande: "Grande", gigante: "Gigante" };
+const LIFESTYLE_LABEL = { dentro: "Só dentro de casa", as_vezes: "Sai às vezes", sempre: "Sai sempre" };
 
 /** Resumo das respostas + agenda sugerida (tudo editável) antes de criar. */
 export function ReviewScreen({
@@ -31,13 +33,15 @@ export function ReviewScreen({
   busy: boolean;
   error: string | null;
 }) {
-  const name = a.name.trim() || "seu cachorro";
+  const cat = a.species === "gato";
+  const name = a.name.trim() || (cat ? "seu gato" : "seu cachorro");
   const { birth } = answersBirth(a);
   const chips = [
     a.breed,
     a.sex === "femea" ? "Fêmea" : a.sex === "macho" ? "Macho" : null,
     ageText(birth),
-    a.size ? SIZE_LABEL[a.size] : null,
+    !cat && a.size ? SIZE_LABEL[a.size] : null,
+    cat && a.lifestyle ? LIFESTYLE_LABEL[a.lifestyle] : null,
     a.neutered === "sim" ? (a.sex === "femea" ? "Castrada" : "Castrado") : null,
     a.hasDisease ? "Doença de base" : null,
     a.hasAllergy ? "Alergia" : null,
@@ -55,9 +59,9 @@ export function ReviewScreen({
       </header>
 
       <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="mt-2 flex items-center gap-4 rounded-3xl bg-card p-4 shadow-card">
-        <PetAvatar url={a.photoPreview} size={72} />
+        <PetAvatar url={a.photoPreview} size={72} species={a.species} />
         <div className="min-w-0">
-          <h1 className="truncate titulo text-3xl">{a.name.trim() || "Meu cachorro"}</h1>
+          <h1 className="truncate titulo text-3xl">{a.name.trim() || (cat ? "Meu gato" : "Meu cachorro")}</h1>
           <div className="mt-1 flex flex-wrap gap-1.5">
             {chips.length ? (
               chips.map((c) => (
@@ -84,7 +88,7 @@ export function ReviewScreen({
 
       <p className="mt-6 flex gap-2 rounded-3xl bg-peach-soft p-4 text-sm">
         <Info size={18} className="mt-0.5 shrink-0 text-peach" />
-        Informações gerais. Siga sempre a orientação do seu veterinário.
+        {cat ? DISCLAIMER_CAT : DISCLAIMER}
       </p>
 
       <footer className="pb-safe fixed inset-x-0 bottom-0 bg-gradient-to-t from-bg via-bg to-transparent px-5 pt-6">

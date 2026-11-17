@@ -83,7 +83,17 @@ export const demoRepo: Repo = {
 
   async listPets() {
     await wait();
-    return load().pets.map(({ photoData, ...p }) => ({ ...p, photoUrl: photoData, role: "principal" as const }));
+    // pets guardados antes dos gatos não têm espécie: eram todos cachorros
+    return load().pets.map(({ photoData, ...p }) => ({
+      ...p,
+      species: p.species ?? "cachorro",
+      lifestyle: p.lifestyle ?? null,
+      otherAnimals: p.otherAnimals ?? null,
+      felvTest: p.felvTest ?? null,
+      foodType: p.foodType ?? null,
+      photoUrl: photoData,
+      role: "principal" as const,
+    }));
   },
   async createPet(pet: PetFields, cares, history) {
     await wait();
@@ -102,6 +112,7 @@ export const demoRepo: Repo = {
         snoozedTo: null,
         reason: null,
         by: USER.id,
+        result: h.result ?? null,
         createdAt: new Date().toISOString(),
       });
     }
@@ -186,7 +197,7 @@ export const demoRepo: Repo = {
     });
     save(db);
   },
-  async addRecord({ care, at, clinic, photo, next }) {
+  async addRecord({ care, at, clinic, photo, next, result }) {
     const label = photo ? await blobToDataUrl(photo) : null;
     const db = load();
     db.records.push({
@@ -202,6 +213,7 @@ export const demoRepo: Repo = {
       createdAt: new Date().toISOString(),
       clinic: clinic ?? null,
       labelPhoto: label,
+      result: result ?? null,
     });
     const c = db.cares.find((x) => x.id === care.id);
     if (c && next) c.nextAt = next;

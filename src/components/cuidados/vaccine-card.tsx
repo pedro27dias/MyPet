@@ -5,10 +5,10 @@ import { AnimatePresence, motion } from "motion/react";
 import { Camera, ChevronLeft, ChevronRight, FileText, Image as ImageIcon, Plus, Share2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { ageText, fmtDate } from "@/lib/dates";
-import { cardImage, cardPages, cardRows, CARD_SECTIONS, type CardPage, type CardRow } from "@/lib/vaccine-card";
+import { cardImage, cardPages, cardRows, cardSections, type CardPage, type CardRow } from "@/lib/vaccine-card";
 import type { Care, CareRecord, Pet } from "@/lib/types";
 import { useApp } from "../app-provider";
-import { LogoMark } from "../shell/logo-mark";
+import { PetMark } from "../shared/species";
 import { PetAvatar } from "../shared/pet-avatar";
 import { Sheet } from "../ui/sheet";
 import { useToast } from "../ui/toast";
@@ -21,9 +21,14 @@ import { AddRecordSheet } from "./add-record-sheet";
 
 type Phase = "fechado" | "abrindo" | "aberto" | "fechando";
 
+const FELV_LABEL = { negativo: "Negativo", positivo: "Positivo", nao_fez: "Não fez", nao_sei: "Não sabe" };
+
 export function VaccineCard({ pet, cares, records }: { pet: Pet; cares: Care[]; records: CareRecord[] }) {
   const [phase, setPhase] = useState<Phase>("fechado");
-  const count = useMemo(() => CARD_SECTIONS.reduce((t, s) => t + cardRows(cares, records, s.key).filter((r) => r.appliedAt).length, 0), [cares, records]);
+  const count = useMemo(
+    () => cardSections(pet.species).reduce((t, s) => t + cardRows(cares, records, s).filter((r) => r.appliedAt).length, 0),
+    [cares, records, pet.species],
+  );
 
   return (
     <>
@@ -55,14 +60,14 @@ function Cover({ pet, count, big = false }: { pet: Pet; count?: number; big?: bo
     <div className={`flex h-full flex-col justify-between text-pink ${big ? "p-7" : "p-5"}`}>
       <div className="flex items-start justify-between">
         <span className="flex items-center gap-2">
-          <LogoMark plain size={big ? 64 : 48} className="text-pink" />
+          <PetMark species={pet.species} size={big ? 64 : 48} className="text-pink" />
         </span>
         <span className="rounded-full border border-pink/40 px-3 py-1 text-xs font-bold tracking-wide text-pink/90">MyPet</span>
       </div>
       <div>
         <p className={`titulo !text-pink leading-none ${big ? "text-5xl" : "text-[2.1rem]"}`}>Cartão de Vacina</p>
         <div className="mt-4 flex items-center gap-3">
-          <PetAvatar url={pet.photoUrl} size={big ? 56 : 44} />
+          <PetAvatar url={pet.photoUrl} species={pet.species} size={big ? 56 : 44} />
           <span className="min-w-0">
             <span className="block truncate text-lg font-bold text-pink-soft">{pet.name}</span>
             <span className="block truncate text-sm text-pink/70">
@@ -90,7 +95,7 @@ function Booklet({
 }) {
   const { repo } = useApp();
   const toast = useToast();
-  const pages = useMemo(() => cardPages(cares, records), [cares, records]);
+  const pages = useMemo(() => cardPages(cares, records, pet.species), [cares, records, pet.species]);
   const [page, setPage] = useState(0);
   const [dir, setDir] = useState(1);
   const [adding, setAdding] = useState(false);
@@ -176,7 +181,7 @@ function Booklet({
       >
         {/* Barra de cima */}
         <div className="flex items-center gap-2 px-4 pb-2 pt-3 text-pink">
-          <LogoMark plain size={34} className="text-pink" />
+          <PetMark species={pet.species} size={34} className="text-pink" />
           <span className="titulo !text-pink flex-1 truncate text-xl">{pet.name}</span>
           <button type="button" aria-label="Compartilhar" onClick={() => setShareOpen(true)} className="grid size-10 place-items-center rounded-full bg-pink/15">
             <Share2 size={18} />
@@ -262,7 +267,7 @@ function Booklet({
         </div>
       </motion.div>
 
-      <AddRecordSheet open={adding} onClose={() => setAdding(false)} pet={pet} section={pages[current]?.section?.key ?? "vacina"} />
+      <AddRecordSheet open={adding} onClose={() => setAdding(false)} pet={pet} section={pages[current]?.section} />
 
       <Sheet open={shareOpen} onClose={() => setShareOpen(false)} title="Compartilhar cartão">
         <p className="mb-4 text-muted">Para mostrar ao veterinário ou guardar.</p>
@@ -301,19 +306,21 @@ function PageContent({ page, pet, photos, onZoom }: { page: CardPage; pet: Pet; 
   if (page.kind === "id") {
     const rows: [string, string | null][] = [
       ["Nome", pet.name],
+      ["Espécie", pet.species === "gato" ? "Gato" : "Cachorro"],
       ["Raça", pet.breed],
       ["Sexo", pet.sex === "femea" ? "Fêmea" : pet.sex === "macho" ? "Macho" : null],
       ["Nascimento", pet.birth ? `${fmtDate(pet.birth)}${pet.birthApprox ? " (aprox.)" : ""}` : null],
       ["Idade", ageText(pet.birth)],
       ["Castrado(a)", pet.neutered === null ? null : pet.neutered ? "Sim" : "Não"],
       ["Alergias", pet.allergies],
+      ...(pet.species === "gato" ? ([["FeLV/FIV", pet.felvTest ? FELV_LABEL[pet.felvTest] : null]] as [string, string | null][]) : []),
       ["Veterinário", [pet.vetName, pet.vetPhone].filter(Boolean).join(" · ") || null],
     ];
     return (
       <div>
         <p className="titulo text-3xl">Identificação</p>
         <div className="mt-4 flex justify-center">
-          <PetAvatar url={pet.photoUrl} size={96} ring />
+          <PetAvatar url={pet.photoUrl} species={pet.species} size={96} ring />
         </div>
         <dl className="pautado mt-4">
           {rows.map(([k, v]) => (
@@ -336,16 +343,16 @@ function PageContent({ page, pet, photos, onZoom }: { page: CardPage; pet: Pet; 
         {page.part && <span className="ml-2 text-base not-italic opacity-60">{page.part}</span>}
       </p>
       <div className="mt-3 grid grid-cols-[1.3fr_1fr_1fr] gap-x-2 border-b border-paper-ink/25 pb-1 text-[11px] font-bold uppercase tracking-wide opacity-70">
-        <span>{s.key === "vacina" ? "Vacina" : "Produto"}</span>
-        <span>Aplicação</span>
-        <span>Próxima</span>
+        <span>{s.type === "exame" ? "Teste" : s.type === "vacina" ? "Vacina" : "Produto"}</span>
+        <span>{s.type === "exame" ? "Data" : "Aplicação"}</span>
+        <span>{s.type === "exame" ? "Resultado" : "Próxima"}</span>
       </div>
       {rows.length === 0 ? (
         <p className="mt-6 text-center text-sm opacity-70">{s.empty}</p>
       ) : (
         <ul>
           {rows.map((r) => (
-            <RowLine key={r.id} r={r} photo={r.labelPhoto ? photos[r.labelPhoto] : undefined} onZoom={onZoom} />
+            <RowLine key={r.id} r={r} test={s.type === "exame"} photo={r.labelPhoto ? photos[r.labelPhoto] : undefined} onZoom={onZoom} />
           ))}
         </ul>
       )}
@@ -353,7 +360,7 @@ function PageContent({ page, pet, photos, onZoom }: { page: CardPage; pet: Pet; 
   );
 }
 
-function RowLine({ r, photo, onZoom }: { r: CardRow; photo?: string; onZoom: (u: string) => void }) {
+function RowLine({ r, test, photo, onZoom }: { r: CardRow; test: boolean; photo?: string; onZoom: (u: string) => void }) {
   return (
     <li className="grid grid-cols-[1.3fr_1fr_1fr] items-center gap-x-2 border-b border-paper-line py-2.5 text-[14px]">
       <span className="min-w-0">
@@ -368,7 +375,11 @@ function RowLine({ r, photo, onZoom }: { r: CardRow; photo?: string; onZoom: (u:
         </span>
       </span>
       <span className="font-semibold">{r.appliedAt ? fmtDate(r.appliedAt) : "—"}</span>
-      <span className={r.nextAt ? "font-semibold text-forest" : "opacity-50"}>{r.nextAt ? fmtDate(r.nextAt) : "—"}</span>
+      {test ? (
+        <span className={r.result ? "font-bold text-forest" : "opacity-50"}>{r.result ?? "—"}</span>
+      ) : (
+        <span className={r.nextAt ? "font-semibold text-forest" : "opacity-50"}>{r.nextAt ? fmtDate(r.nextAt) : "—"}</span>
+      )}
     </li>
   );
 }
@@ -379,15 +390,16 @@ function PrintCard({ pet, cares, records }: { pet: Pet; cares: Care[]; records: 
     <div id="cartao-impressao" className="hidden bg-white p-8 text-black">
       <h1 style={{ fontFamily: "var(--font-titulo)", fontStyle: "italic", fontSize: 32 }}>Cartão de Vacina · {pet.name}</h1>
       <p>{[pet.breed, pet.birth ? `nascimento ${fmtDate(pet.birth)}` : null].filter(Boolean).join(" · ")}</p>
-      {CARD_SECTIONS.map((s) => {
-        const rows = cardRows(cares, records, s.key);
+      {cardSections(pet.species).map((s) => {
+        const rows = cardRows(cares, records, s);
+        const test = s.type === "exame";
         return (
           <section key={s.key} style={{ marginTop: 24 }}>
             <h2 style={{ fontFamily: "var(--font-titulo)", fontStyle: "italic", fontSize: 22 }}>{s.title}</h2>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
               <thead>
                 <tr>
-                  {["Nome", "Aplicação", "Próxima", "Clínica / veterinário"].map((h) => (
+                  {(test ? ["Teste", "Data", "Resultado", "Clínica / veterinário"] : ["Nome", "Aplicação", "Próxima", "Clínica / veterinário"]).map((h) => (
                     <th key={h} style={{ textAlign: "left", borderBottom: "1px solid #999", padding: "6px 4px" }}>
                       {h}
                     </th>
@@ -406,7 +418,7 @@ function PrintCard({ pet, cares, records }: { pet: Pet; cares: Care[]; records: 
                   <tr key={r.id}>
                     <td style={{ borderBottom: "1px solid #ddd", padding: "6px 4px" }}>{r.name}</td>
                     <td style={{ borderBottom: "1px solid #ddd", padding: "6px 4px" }}>{r.appliedAt ? fmtDate(r.appliedAt) : "—"}</td>
-                    <td style={{ borderBottom: "1px solid #ddd", padding: "6px 4px" }}>{r.nextAt ? fmtDate(r.nextAt) : "—"}</td>
+                    <td style={{ borderBottom: "1px solid #ddd", padding: "6px 4px" }}>{test ? (r.result ?? "—") : r.nextAt ? fmtDate(r.nextAt) : "—"}</td>
                     <td style={{ borderBottom: "1px solid #ddd", padding: "6px 4px" }}>{r.clinic ?? "—"}</td>
                   </tr>
                 ))}

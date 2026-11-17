@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { BREEDS, breedSize } from "@/lib/breeds";
+import { breedSize, breedsFor } from "@/lib/breeds";
 import { addMonths, birthFromAge, parseDate, startOfDay, todayStr } from "@/lib/dates";
-import type { Origin, Pet, PetFields, Sex, Size } from "@/lib/types";
+import type { FelvTest, FoodType, Lifestyle, Origin, OtherAnimal, Pet, PetFields, Sex, Size, Species } from "@/lib/types";
 import { useApp } from "../app-provider";
 import { Button } from "../ui/button";
 import { Pills, Stepper, TextField } from "../ui/fields";
@@ -23,6 +23,28 @@ const ORIGINS: { value: Origin; label: string }[] = [
   { value: "comprado", label: "Comprado" },
   { value: "presente", label: "Ganhei de presente" },
   { value: "outro", label: "Outro" },
+];
+
+const LIFESTYLES: { value: Lifestyle; label: string }[] = [
+  { value: "dentro", label: "Só dentro de casa" },
+  { value: "as_vezes", label: "Sai às vezes" },
+  { value: "sempre", label: "Sai sempre" },
+];
+const OTHERS: { value: OtherAnimal; label: string }[] = [
+  { value: "gatos", label: "Outros gatos" },
+  { value: "cachorros", label: "Cachorros" },
+  { value: "nenhum", label: "Nenhum" },
+];
+const FELV: { value: FelvTest; label: string }[] = [
+  { value: "negativo", label: "Negativo" },
+  { value: "positivo", label: "Positivo" },
+  { value: "nao_fez", label: "Não fez" },
+  { value: "nao_sei", label: "Não sei" },
+];
+const FOOD_TYPES: { value: FoodType; label: string }[] = [
+  { value: "seca", label: "Seca" },
+  { value: "umida", label: "Úmida" },
+  { value: "mista", label: "Mista" },
 ];
 
 /** Editar o perfil do pet (os mesmos dados do cadastro). */
@@ -52,6 +74,12 @@ function EditForm({ pet, onDone }: { pet: Pet; onDone: () => void }) {
   const toast = useToast();
   const age = ageParts(pet.birth);
 
+  const [species, setSpecies] = useState<Species>(pet.species);
+  const [lifestyle, setLifestyle] = useState<Lifestyle | null>(pet.lifestyle);
+  const [others, setOthers] = useState<OtherAnimal[]>(pet.otherAnimals ?? []);
+  const [felv, setFelv] = useState<FelvTest | null>(pet.felvTest);
+  const [foodType, setFoodType] = useState<FoodType | null>(pet.foodType);
+  const cat = species === "gato";
   const [name, setName] = useState(pet.name);
   const [breed, setBreed] = useState(pet.breed ?? "");
   const [sex, setSex] = useState<Sex | null>(pet.sex);
@@ -85,11 +113,16 @@ function EditForm({ pet, onDone }: { pet: Pet; onDone: () => void }) {
     setError(null);
     const clean = (s: string) => s.trim() || null;
     const patch: Partial<PetFields> = {
+      species,
+      lifestyle: cat ? lifestyle : null,
+      otherAnimals: cat && others.length ? others : null,
+      felvTest: cat ? felv : null,
+      foodType: cat ? foodType : null,
       name: name.trim(),
       breed: clean(breed),
       sex,
       ...birthValue(),
-      size,
+      size: cat ? null : size,
       origin,
       neutered: neutered === "sim" ? true : neutered === "nao" ? false : null,
       diseases: clean(diseases),
@@ -114,6 +147,16 @@ function EditForm({ pet, onDone }: { pet: Pet; onDone: () => void }) {
   return (
     <div className="space-y-7 pb-2">
       <Group title="Básico">
+        <Field label="Espécie">
+          <Pills
+            options={[
+              { value: "cachorro", label: "Cachorro" },
+              { value: "gato", label: "Gato" },
+            ]}
+            value={species}
+            onChange={setSpecies}
+          />
+        </Field>
         <TextField label="Nome" value={name} onChange={setName} maxLength={40} />
         <label className="block">
           <span className="mb-1 block px-1 text-sm font-bold text-muted">Raça</span>
@@ -122,14 +165,14 @@ function EditForm({ pet, onDone }: { pet: Pet; onDone: () => void }) {
             value={breed}
             onChange={(e) => {
               setBreed(e.target.value);
-              const s = breedSize(e.target.value);
+              const s = cat ? null : breedSize(e.target.value);
               if (s && !size) setSize(s);
             }}
             placeholder="Digite para buscar"
             className="h-13 w-full rounded-2xl border-2 border-line bg-card px-4 text-fg outline-none placeholder:text-faint focus:border-primary"
           />
           <datalist id="racas">
-            {BREEDS.map((b) => (
+            {breedsFor(species).map((b) => (
               <option key={b.name} value={b.name} />
             ))}
           </datalist>
@@ -164,9 +207,11 @@ function EditForm({ pet, onDone }: { pet: Pet; onDone: () => void }) {
             )}
           </div>
         </Field>
-        <Field label="Porte">
-          <Pills options={SIZES} value={size} onChange={setSize} />
-        </Field>
+        {!cat && (
+          <Field label="Porte">
+            <Pills options={SIZES} value={size} onChange={setSize} />
+          </Field>
+        )}
         <Field label="Origem">
           <Pills options={ORIGINS} value={origin} onChange={setOrigin} />
         </Field>
@@ -184,14 +229,53 @@ function EditForm({ pet, onDone }: { pet: Pet; onDone: () => void }) {
             onChange={setNeutered}
           />
         </Field>
+        {cat && (
+          <>
+            <Field label="Rotina">
+              <Pills options={LIFESTYLES} value={lifestyle} onChange={setLifestyle} />
+            </Field>
+            <Field label="Mora com (pode marcar mais de um)">
+              <div className="flex flex-wrap gap-2">
+                {OTHERS.map((o) => {
+                  const sel = others.includes(o.value);
+                  return (
+                    <button
+                      key={o.value}
+                      type="button"
+                      aria-pressed={sel}
+                      onClick={() =>
+                        setOthers((prev) =>
+                          o.value === "nenhum"
+                            ? sel ? [] : ["nenhum"]
+                            : sel ? prev.filter((x) => x !== o.value) : [...prev.filter((x) => x !== "nenhum"), o.value],
+                        )
+                      }
+                      className={`h-10 rounded-full px-4 text-sm font-bold transition active:scale-95 ${sel ? "bg-forest text-pink" : "bg-card text-fg ring-2 ring-line"}`}
+                    >
+                      {o.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </Field>
+            <Field label="Teste FeLV/FIV">
+              <Pills options={FELV} value={felv} onChange={setFelv} />
+            </Field>
+          </>
+        )}
         <TextField label="Doença de base" multiline value={diseases} onChange={setDiseases} placeholder="Deixe vazio se não tem" />
         <TextField label="Alergias" multiline value={allergies} onChange={setAllergies} placeholder="Deixe vazio se não tem" />
       </Group>
 
       <Group title="Rotina">
+        {cat && (
+          <Field label="Alimentação">
+            <Pills options={FOOD_TYPES} value={foodType} onChange={setFoodType} />
+          </Field>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <TextField label="Ração" value={foodBrand} onChange={setFoodBrand} placeholder="Marca" />
-          <TextField label="Por dia" value={foodAmount} onChange={setFoodAmount} placeholder="Ex.: 200 g" />
+          <TextField label="Por dia" value={foodAmount} onChange={setFoodAmount} placeholder={cat ? "Ex.: 60 g" : "Ex.: 200 g"} />
         </div>
         <TextField label="Veterinário" value={vetName} onChange={setVetName} placeholder="Nome ou clínica" />
         <TextField label="Telefone do veterinário" type="tel" inputMode="tel" value={vetPhone} onChange={setVetPhone} placeholder="(11) 99999-9999" />
