@@ -14,7 +14,7 @@ O dono **não programa**: explique em português simples, sem termos técnicos, 
 | 2b | Editar perfil do pet | ✅ |
 | 3 | Aba Guia (fases: filhote, adulto, idoso) | ✅ |
 | 4 | Gastos (aba Pet + botão +) | ✅ (rodar `003_gastos.sql`) |
-| 5 | Notificações push (no horário, para todos os tutores; aviso quando alguém conclui) + PWA instalável completa | ✅ código (falta: variáveis na Vercel + rodar `004_notificacoes.sql` com o CRON_SECRET) |
+| 5 | Notificações push (no horário, para todos os tutores; aviso quando alguém conclui) + PWA instalável completa | ✅ (variáveis na Vercel e SQL 004 rodado; cron do Supabase respondendo 200 — conferir em `net._http_response`) |
 | 6 | Publicar na Vercel | ✅ https://my-pet-orcin.vercel.app (conta Vercel da pedro27dias, projeto `my-pet`; publica sozinho a cada push no `main`; variáveis `NEXT_PUBLIC_SUPABASE_*` em Production; cron diário `/api/manter-ativo` em `vercel.json` mantém o Supabase acordado) |
 
 ## Comandos
