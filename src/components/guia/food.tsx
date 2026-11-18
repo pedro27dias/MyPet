@@ -5,13 +5,27 @@ import { ArrowLeft, ArrowRight, ChevronDown, Info, Search, Siren, X } from "luci
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { FOOD_DISCLAIMER, FOOD_SOURCES, searchFoods, SECTIONS, STATUS_ICON, STATUS_LABEL, SUMMARY, type FoodStatus } from "@/lib/food-guide";
+import { FOOD_DISCLAIMER, FOOD_SOURCES, searchFoods, SECTIONS, STATUS_ICON, STATUS_SHORT, SUMMARY, type FoodStatus } from "@/lib/food-guide";
 import type { Species } from "@/lib/types";
 import { useApp } from "../app-provider";
 import { TextField } from "../ui/fields";
 
 const STATUS_BG: Record<FoodStatus, string> = { ok: "bg-success-soft", cuidado: "bg-warn-soft", nao: "bg-danger-soft" };
 const STATUS_FG: Record<FoodStatus, string> = { ok: "text-forest", cuidado: "text-warn", nao: "text-danger" };
+const STATUS_BORDER: Record<FoodStatus, string> = { ok: "border-forest", cuidado: "border-warn", nao: "border-danger" };
+
+/** Pílula "🐶 Cão: ✅ Pode" com a cor do status; a da espécie escolhida tem borda forte. */
+function SpeciesPill({ emoji, label, status, active }: { emoji: string; label: string; status: FoodStatus; active: boolean }) {
+  return (
+    <span
+      className={`flex min-w-0 items-center justify-center whitespace-nowrap rounded-full border-2 px-1.5 py-2 text-[13px] font-extrabold tracking-tight ${STATUS_BG[status]} ${STATUS_FG[status]} ${
+        active ? STATUS_BORDER[status] : "border-transparent"
+      }`}
+    >
+      {emoji} {label}: {STATUS_ICON[status]} {STATUS_SHORT[status]}
+    </span>
+  );
+}
 
 function SpeciesSwitch({ value, onChange, id }: { value: Species; onChange: (s: Species) => void; id: string }) {
   return (
@@ -97,7 +111,7 @@ export function FoodScreen({ initialSpecies }: { initialSpecies?: Species }) {
   const toggle = (id: string) => setOpen((o) => (o.has(id) ? (o.delete(id), new Set(o)) : new Set(o.add(id))));
 
   return (
-    <main className="pt-safe mx-auto min-h-dvh max-w-md px-5 pb-56">
+    <main className="pt-safe pb-barra mx-auto min-h-dvh max-w-md px-5">
       <header className="flex items-center gap-3 py-4">
         <Link href="/guia" aria-label="Voltar ao Guia" className="grid size-11 place-items-center rounded-full bg-card shadow-card">
           <ArrowLeft size={20} />
@@ -125,20 +139,24 @@ export function FoodScreen({ initialSpecies }: { initialSpecies?: Species }) {
               <p className="rounded-3xl bg-card p-4 text-sm text-muted shadow-card">Não temos “{query.trim()}” na lista. Na dúvida, não ofereça e pergunte ao veterinário.</p>
             ) : (
               results.map((f) => {
-                const st = species === "gato" ? f.cat : f.dog;
-                const other = species === "gato" ? f.dog : f.cat;
-                const how = (species === "gato" ? f.howCat : f.howDog) ?? f.how;
+                const cat = species === "gato";
+                const how = (cat ? f.howCat : f.howDog) ?? f.how;
+                const otherHow = (cat ? f.howDog : f.howCat) ?? f.how;
                 return (
-                  <div key={f.name} className={`rounded-3xl p-4 ${STATUS_BG[st]}`}>
-                    <p className="flex items-center gap-2">
-                      <span className="text-2xl">{STATUS_ICON[st]}</span>
-                      <span className="flex-1 text-lg font-extrabold text-forest">{f.name}</span>
-                      <span className={`text-xs font-bold ${STATUS_FG[st]}`}>{STATUS_LABEL[st]}</span>
-                    </p>
-                    <p className="mt-1 text-[15px] leading-snug text-ink">{how}</p>
-                    <p className="mt-2 text-xs font-semibold text-muted">
-                      {species === "gato" ? "Para cães" : "Para gatos"}: {STATUS_ICON[other]} {STATUS_LABEL[other].toLowerCase()}
-                    </p>
+                  <div key={f.name} className="rounded-3xl bg-card p-4 shadow-card">
+                    <p className="text-lg font-extrabold text-forest">{f.name}</p>
+                    {/* As duas espécies lado a lado; a escolhida no topo fica destacada */}
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <SpeciesPill emoji="🐶" label="Cão" status={f.dog} active={!cat} />
+                      <SpeciesPill emoji="🐱" label="Gato" status={f.cat} active={cat} />
+                    </div>
+                    <p className="mt-3 text-xs font-bold uppercase tracking-wide text-muted">Como servir {cat ? "(gato)" : "(cão)"}</p>
+                    <p className="mt-0.5 text-[15px] leading-snug text-ink">{how}</p>
+                    {otherHow !== how && (
+                      <p className="mt-2 text-[15px] leading-snug text-ink">
+                        <b className="text-forest">{cat ? "No cão" : "No gato"}:</b> {otherHow}
+                      </p>
+                    )}
                   </div>
                 );
               })
@@ -154,7 +172,15 @@ export function FoodScreen({ initialSpecies }: { initialSpecies?: Species }) {
             <section key={s.id} className={`overflow-hidden rounded-3xl shadow-card ${s.id === "comeu" ? "bg-danger-soft" : "bg-card"}`}>
               <button type="button" aria-expanded={isOpen} onClick={() => toggle(s.id)} className="flex w-full items-center gap-3 p-4 text-left">
                 <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-bg text-xl">{s.emoji}</span>
-                <span className="flex-1 text-lg font-bold text-forest">{s.title}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-lg font-bold leading-tight text-forest">
+                    {s.title}
+                    {s.only && <span className="whitespace-nowrap"> — {s.only === "gato" ? "🐱 Gato" : "🐶 Cão"}</span>}
+                  </span>
+                  {!s.only && s.id !== "comeu" && (
+                    <span className="mt-1 inline-block rounded-full bg-olive-soft px-2 py-0.5 text-[11px] font-bold text-forest">🐶🐱 Cães e gatos</span>
+                  )}
+                </span>
                 <motion.span animate={{ rotate: isOpen ? 180 : 0 }} className="text-muted">
                   <ChevronDown size={20} />
                 </motion.span>
@@ -165,12 +191,21 @@ export function FoodScreen({ initialSpecies }: { initialSpecies?: Species }) {
                     <div className="px-4 pb-4">
                       {s.intro && <p className="mb-2 rounded-2xl bg-olive-soft px-3 py-2 text-sm font-semibold text-forest">{s.intro}</p>}
                       <ul className="space-y-2">
-                        {s.items.map((it) => (
-                          <li key={it.text} className="flex gap-2.5 text-[15px] leading-snug text-ink">
-                            <span className="w-5 shrink-0 text-center">{it.status ? STATUS_ICON[it.status] : "•"}</span>
-                            <span>{it.text}</span>
-                          </li>
-                        ))}
+                        {s.items.map((it) =>
+                          it.heading ? (
+                            <li key={it.text} className="pt-3 text-base font-extrabold text-forest">
+                              {it.text}
+                            </li>
+                          ) : (
+                            <li key={it.text} className="flex gap-2.5 text-[15px] leading-snug text-ink">
+                              <span className="w-5 shrink-0 text-center">{it.status ? STATUS_ICON[it.status] : "•"}</span>
+                              <span>
+                                {it.species && <b className="mr-1 text-forest">{it.species === "gato" ? "🐱" : "🐶"}</b>}
+                                {it.text}
+                              </span>
+                            </li>
+                          ),
+                        )}
                       </ul>
                       {s.steps && <AteSomething steps={s.steps} />}
                     </div>
@@ -182,26 +217,23 @@ export function FoodScreen({ initialSpecies }: { initialSpecies?: Species }) {
         })}
       </div>
 
-      <div className="mt-5">
-        <button type="button" onClick={() => setShowSources((v) => !v)} className="text-sm font-bold text-olive underline">
+      {/* Aviso e fontes: no fim da página, como texto normal */}
+      <section className="mt-8 rounded-3xl bg-olive-soft p-4 text-sm leading-snug text-forest">
+        <p className="flex gap-2 font-semibold">
+          <Info size={17} className="mt-0.5 shrink-0 text-olive" />
+          {FOOD_DISCLAIMER}
+        </p>
+        <button type="button" onClick={() => setShowSources((v) => !v)} className="mt-2 font-bold text-olive underline">
           {showSources ? "Esconder fontes" : "Ver fontes"}
         </button>
         {showSources && (
-          <ul className="mt-2 space-y-1 text-sm text-muted">
+          <ul className="mt-2 space-y-1 text-ink">
             {FOOD_SOURCES.map((f) => (
               <li key={f}>• {f}</li>
             ))}
           </ul>
         )}
-      </div>
-
-      {/* Rodapé fixo */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-24 z-30 px-4">
-        <div className="pointer-events-auto mx-auto flex max-w-md items-start gap-2 rounded-2xl bg-olive-soft/95 px-3 py-2 text-[12px] font-semibold leading-snug text-forest shadow-card backdrop-blur">
-          <Info size={15} className="mt-0.5 shrink-0 text-olive" />
-          <span className="flex-1">{FOOD_DISCLAIMER}</span>
-        </div>
-      </div>
+      </section>
     </main>
   );
 }

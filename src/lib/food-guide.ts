@@ -9,6 +9,8 @@ export type FoodStatus = "ok" | "cuidado" | "nao";
 
 export const STATUS_ICON: Record<FoodStatus, string> = { ok: "✅", cuidado: "⚠️", nao: "❌" };
 export const STATUS_LABEL: Record<FoodStatus, string> = { ok: "Pode, com moderação", cuidado: "Com cuidado", nao: "Não pode" };
+/** Rótulo curto para as pílulas por espécie */
+export const STATUS_SHORT: Record<FoodStatus, string> = { ok: "Pode", cuidado: "Cuidado", nao: "Não pode" };
 
 export const FOOD_DISCLAIMER = "Informações gerais baseadas em fontes veterinárias (WSAVA, AAHA, ASPCA, AKC, Hill's). Cada pet é único. Na dúvida, consulte o veterinário.";
 
@@ -19,6 +21,8 @@ export const FOOD_SOURCES = [
   "Hill's – ovos para cães",
   "Battersea / International Cat Care – alimentos tóxicos e lírios para gatos",
   "PetMD – frutas para gatos",
+  "AVMA, AAHA e CVMA – posição sobre dietas com proteína crua",
+  "FDA (EUA) – gripe aviária H5N1 em gatos e alimentos crus",
 ];
 
 /** Resumo (aba Guia) */
@@ -37,7 +41,8 @@ export interface FoodSection {
   /** só para esta espécie (sem = as duas) */
   only?: Species;
   intro?: string;
-  items: { text: string; status?: FoodStatus }[];
+  /** heading = subtítulo dentro da seção */
+  items: { text: string; status?: FoodStatus; heading?: boolean; species?: Species }[];
   steps?: string[];
 }
 
@@ -123,9 +128,32 @@ export const SECTIONS: FoodSection[] = [
     ],
   },
   {
+    id: "crus",
+    emoji: "🥩",
+    title: "Carnes cruas, cozidas e miúdos",
+    items: [
+      { status: "nao", text: "Proteína crua: NÃO recomendado. Associações veterinárias (AVMA, AAHA, CVMA) desaconselham carne, frango, peixe, ovo e leite crus ou malpassados para cães e gatos." },
+      { text: "Por quê: carnes cruas podem ter bactérias (Salmonella, E. coli, Listeria, Campylobacter) e parasitas (como Toxoplasma). O pet pode adoecer ou, mesmo parecendo saudável, transmitir essas bactérias para outros animais e para as pessoas da casa, principalmente crianças, idosos e imunossuprimidos." },
+      { status: "nao", text: "Gripe aviária (H5N1): há casos de gatos que adoeceram e morreram após comer alimento cru ou leite cru contaminados. Gatos são especialmente sensíveis. A FDA (EUA) orienta cozinhar." },
+      { status: "nao", text: "Frango cru: não dar. Frango cozido, sem tempero, sem pele e sem osso: pode, com moderação." },
+      { status: "nao", text: "Carne bovina/suína crua ou malpassada: não. Cozida e sem gordura: pode, com moderação." },
+      { status: "nao", text: "Peixe cru: não. Cozido e sem espinha: pode, com moderação." },
+      { status: "nao", text: "Leite cru: não." },
+      { text: "Se a família optar por dieta crua: só com acompanhamento de veterinário nutricionista, e com higiene rigorosa (lavar mãos, potes e superfícies)." },
+      { status: "nao", text: "Ossos: não, crus ou cozidos." },
+      { heading: true, text: "Fígado e miúdos" },
+      { status: "cuidado", text: "Fígado: com cuidado, sempre COZIDO e em POUCA quantidade, como petisco ocasional." },
+      { text: "Motivo: fígado tem muita vitamina A. O excesso, repetido ao longo do tempo, causa intoxicação por vitamina A (hipervitaminose A)." },
+      { species: "gato", status: "cuidado", text: "Gato: mais sensível. O excesso pode causar crescimentos ósseos dolorosos na coluna e nas articulações (rigidez no pescoço, dificuldade para se mover). Prefira fígado de frango, só pedacinhos e de vez em quando. Evite petiscos de fígado desidratado todo dia." },
+      { species: "cachorro", status: "cuidado", text: "Cão: pouca quantidade. Raças como Dálmata e cães com tendência a acumular cobre no fígado devem evitar. Consulte o veterinário." },
+      { status: "ok", text: "Outros miúdos (coração, moela): cozidos, sem tempero, com moderação." },
+      { status: "nao", text: "Não dê suplementos de óleo de fígado de bacalhau sem orientação do veterinário." },
+    ],
+  },
+  {
     id: "frutas-cao",
     emoji: "🍉",
-    title: "Frutas — cachorro",
+    title: "Frutas",
     only: "cachorro",
     intro: "Regra: sempre lavada, sem casca dura, sem sementes e sem caroço, em pedaços pequenos, como petisco.",
     items: [
@@ -145,7 +173,7 @@ export const SECTIONS: FoodSection[] = [
   {
     id: "frutas-gato",
     emoji: "🍉",
-    title: "Frutas — gato",
+    title: "Frutas",
     only: "gato",
     items: [
       { text: "Gatos não sentem o gosto doce. Se gostarem, é pela textura ou pelo cheiro. É normal recusarem." },
@@ -158,7 +186,7 @@ export const SECTIONS: FoodSection[] = [
   {
     id: "gatos",
     emoji: "🐱",
-    title: "Atenção especial para gatos",
+    title: "Atenção especial",
     only: "gato",
     items: [
       { status: "nao", text: "Lírios: extremamente tóxicos. Folhas, flores, pólen e até a água do vaso podem causar insuficiência renal grave. Não ter lírios em casa." },
@@ -212,16 +240,27 @@ export const FOODS: Food[] = [
   { name: "Macadâmia", aliases: ["macadamia", "nozes"], dog: "nao", cat: "nao", how: "Tóxica para cães. Evite oleaginosas para gatos também." },
   { name: "Ossos", aliases: ["osso", "osso cozido", "osso cru", "espinha"], dog: "nao", cat: "nao", how: "Podem engasgar, quebrar dentes e perfurar ou entupir o intestino." },
   { name: "Comida muito salgada", aliases: ["batata frita", "salgadinho", "pipoca", "sal"], dog: "nao", cat: "nao", how: "O excesso de sal pode intoxicar." },
-  { name: "Carne crua", aliases: ["carne mal passada"], dog: "nao", cat: "nao", how: "Risco de Salmonella e outras bactérias (também para as pessoas da casa). Sirva cozida." },
-  { name: "Peixe cru", aliases: ["sushi", "sashimi"], dog: "nao", cat: "nao", how: "Evitar. Peixe só cozido, sem tempero e sem espinha." },
+  { name: "Carne crua", aliases: ["carne mal passada", "carne malpassada", "carne de porco crua", "carne suína crua", "tartar"], dog: "nao", cat: "nao", how: "Crua ou malpassada não: risco de bactérias e parasitas (também para as pessoas da casa). Cozida e sem gordura, com moderação." },
+  { name: "Frango cru", aliases: ["frango malpassado", "frango mal passado"], dog: "nao", cat: "nao", how: "Não dar: risco de Salmonella e outras bactérias. Cozido, sem tempero, sem pele e sem osso, pode com moderação.", howCat: "Não dar: além das bactérias, há casos de gatos com gripe aviária (H5N1) após comer alimento cru. Sirva só cozido." },
+  { name: "Leite cru", aliases: ["leite não pasteurizado", "leite direto da vaca"], dog: "nao", cat: "nao", how: "Não dar: pode ter bactérias e vírus.", howCat: "Não dar: há casos de gatos que adoeceram gravemente (gripe aviária H5N1) após tomar leite cru." },
+  { name: "Fígado", aliases: ["figado", "fígado de boi", "bife de fígado", "petisco de fígado"], dog: "cuidado", cat: "cuidado", how: "Sempre cozido e em pouca quantidade, como petisco ocasional. Excesso de vitamina A faz mal.", howDog: "Cozido e pouco, de vez em quando. Dálmatas e cães com tendência a acumular cobre no fígado devem evitar.", howCat: "Gatos são mais sensíveis ao excesso de vitamina A. Prefira fígado de frango, só pedacinhos e de vez em quando. Nada de petisco de fígado todo dia." },
+  { name: "Fígado de frango", aliases: ["figado de frango", "fígado de galinha"], dog: "cuidado", cat: "cuidado", how: "Cozido, sem tempero, em pouca quantidade e de vez em quando (muita vitamina A).", howCat: "É a melhor opção de fígado para gatos, mas só pedacinhos e de vez em quando." },
+  { name: "Coração", aliases: ["coracao", "coração de frango", "coraçãozinho"], dog: "ok", cat: "ok", how: "Cozido, sem tempero, com moderação." },
+  { name: "Moela", aliases: ["moela de frango", "miúdos", "miudos"], dog: "ok", cat: "ok", how: "Cozida, sem tempero, em pedaços pequenos e com moderação." },
+  { name: "Carne moída", aliases: ["carne moida"], dog: "ok", cat: "ok", how: "Bem cozida, sem tempero e sem gordura, com moderação. Crua não." },
+  { name: "Salsicha", dog: "nao", cat: "nao", how: "Evitar: muito sal, gordura e temperos (às vezes cebola e alho)." },
+  { name: "Linguiça", aliases: ["linguica", "calabresa"], dog: "nao", cat: "nao", how: "Evitar: muito sal, gordura e temperos (às vezes cebola e alho)." },
+  { name: "Presunto", aliases: ["peito de peru", "apresuntado", "mortadela", "salame"], dog: "nao", cat: "nao", how: "Evitar: muito sal e gordura." },
+  { name: "Bacon", aliases: ["toucinho", "torresmo"], dog: "nao", cat: "nao", how: "Evitar: muita gordura e sal; pode causar pancreatite." },
+  { name: "Peixe cru", aliases: ["sushi", "sashimi", "ceviche"], dog: "nao", cat: "nao", how: "Não: risco de bactérias e parasitas. Peixe só cozido, sem tempero e sem espinha." },
   { name: "Ovo cru", aliases: ["clara crua", "gema crua"], dog: "nao", cat: "nao", how: "Risco de Salmonella, e a clara crua atrapalha a absorção da biotina." },
   { name: "Ovo cozido", aliases: ["ovo", "ovo mexido"], dog: "ok", cat: "ok", how: "Bem cozido ou mexido, sem sal, sem óleo e sem tempero. Comece com pouco.", howCat: "Pequenas porções de vez em quando, como petisco." },
   { name: "Ovo frito", dog: "cuidado", cat: "cuidado", how: "Evitar: gordura extra." },
   { name: "Frango cozido", aliases: ["frango", "peito de frango"], dog: "ok", cat: "ok", how: "Cozido, sem tempero, sem pele e sem osso.", howCat: "Em pedacinhos, sem tempero e sem osso." },
   { name: "Peru cozido", aliases: ["peru"], dog: "ok", cat: "ok", how: "Cozido, sem tempero, sem pele e sem osso." },
-  { name: "Carne bovina cozida", aliases: ["carne", "carne moída", "patinho"], dog: "ok", cat: "ok", how: "Cozida, sem tempero e sem gordura." },
+  { name: "Carne bovina cozida", aliases: ["carne", "carne cozida", "patinho"], dog: "ok", cat: "ok", how: "Cozida, sem tempero e sem gordura." },
   { name: "Peixe cozido", aliases: ["peixe", "tilápia", "salmão"], dog: "ok", cat: "ok", how: "Cozido, sem tempero e SEM ESPINHA.", howCat: "Em pedacinhos, sem tempero e sem espinha." },
-  { name: "Presunto e embutidos", aliases: ["presunto", "linguiça", "salsicha", "salame", "mortadela", "bacon"], dog: "nao", cat: "nao", how: "Evitar: muito sal e gordura." },
+  { name: "Embutidos", aliases: ["frios"], dog: "nao", cat: "nao", how: "Evitar: muito sal e gordura." },
   { name: "Pele de frango e gorduras", aliases: ["pele de frango", "fritura", "churrasco", "picanha"], dog: "cuidado", cat: "cuidado", how: "Podem causar vômito, diarreia e pancreatite." },
   { name: "Leite", aliases: ["leite de vaca", "derivados"], dog: "cuidado", cat: "cuidado", how: "Muitos têm intolerância à lactose (diarreia).", howCat: "Não recomendado: a maioria dos gatos adultos tem intolerância. Dê água fresca." },
   { name: "Queijo", dog: "cuidado", cat: "cuidado", how: "Só um pouquinho, de vez em quando." },

@@ -172,6 +172,11 @@ body {
   }
 }
 
+/* Espaço no fim das telas: barra de baixo (64px + botão + que sobe ~36px) + 24px + área segura do iPhone. */
+.pb-barra {
+  padding-bottom: calc(8rem + env(safe-area-inset-bottom));
+}
+
 /* Dois campos lado a lado: colunas iguais, 12px entre elas; em telas < 360px, um embaixo do outro. */
 .campos-2 {
   display: grid;

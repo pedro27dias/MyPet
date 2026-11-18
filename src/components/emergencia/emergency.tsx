@@ -70,7 +70,7 @@ export function EmergencyScreen() {
   }
 
   return (
-    <main className="pt-safe mx-auto min-h-dvh max-w-md px-5 pb-32">
+    <main className="pt-safe pb-barra mx-auto min-h-dvh max-w-md px-5">
       <header className="flex items-center gap-3 py-4">
         <Link href="/" aria-label="Voltar" className="grid size-11 place-items-center rounded-full bg-card shadow-card">
           <ArrowLeft size={20} />
