@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { fmtMoney } from "@/lib/money";
 import { blankCare } from "@/lib/onboarding";
 import { atTime, fmtTime, toDateStr, todayStr } from "@/lib/dates";
 import { isAnchored } from "@/lib/schedule";
@@ -14,6 +15,10 @@ import { useToast } from "../ui/toast";
 import { MED_FREQS } from "../onboarding/steps";
 import { CARE_META, CareIcon } from "./care-meta";
 import { FleaSafetyNote } from "./flea-safety";
+import { CollarForm } from "../coleira/collar-form";
+import { activeFleaCollars, OVERLAP_TEXT } from "@/lib/collar";
+import { DateInput, RepeatPicker } from "../ui/date-input";
+import { TriangleAlert } from "lucide-react";
 
 /*
  * Formulário de um cuidado (novo ou editar). Remédio usa horários fixos; os outros usam uma data
@@ -25,22 +30,15 @@ const DEFAULT_TITLE: Record<CareType, string> = {
   vacina: "Vacina V8/V10",
   vermifugo: "Vermífugo",
   antipulgas: "Antipulgas",
+  coleira: "Coleira",
+  banho: "Banho",
   consulta: "Consulta",
   exame: "Teste FeLV/FIV",
   outro: "",
 };
 
-const REPEAT_OPTIONS: { value: string; label: string }[] = [
-  { value: "unica:1", label: "Não repete" },
-  { value: "diaria:1", label: "Todo dia" },
-  { value: "semanal:1", label: "Toda semana" },
-  { value: "meses:1", label: "Todo mês" },
-  { value: "meses:3", label: "A cada 3 meses" },
-  { value: "meses:6", label: "A cada 6 meses" },
-  { value: "anos:1", label: "Todo ano" },
-];
-
-const CONSULT_KINDS = ["Consulta", "Cirurgia", "Exame", "Banho e tosa"];
+const CONSULT_KINDS = ["Consulta", "Cirurgia", "Exame"];
+const BATH_KINDS = ["Banho", "Banho e tosa", "Tosa higiênica"];
 
 export function newCareFor(petId: string, type: CareType, species?: Species): Care {
   const cat = species === "gato";
@@ -53,6 +51,7 @@ export function newCareFor(petId: string, type: CareType, species?: Species): Ca
   }
   if (type === "vermifugo") Object.assign(c, { freq: "meses", interval: 3 });
   if (type === "antipulgas") Object.assign(c, { freq: "meses", interval: 1 });
+  if (type === "coleira") Object.assign(c, { freq: "meses", interval: cat ? 8 : 8, notifyBeforeMin: 7 * 1440, protects: cat ? ["pulgas"] : ["pulgas", "carrapatos"] });
   if (type === "vacina") Object.assign(c, { freq: "anos", interval: 1 });
   if (type === "consulta") c.notifyBeforeMin = 1440;
   if (c.nextAt && new Date(c.nextAt) < new Date()) {
@@ -84,7 +83,7 @@ export function CareFormSheet({ care, open, onClose }: { care: Care | null; open
         )
       }
     >
-      {care && <CareForm key={care.id} initial={care} onDone={onClose} />}
+      {care && (care.type === "coleira" ? <CollarForm key={care.id} initial={care} onDone={onClose} /> : <CareForm key={care.id} initial={care} onDone={onClose} />)}
     </Sheet>
   );
 }
@@ -102,10 +101,12 @@ function CareForm({ initial, onDone }: { initial: Care; onDone: () => void }) {
   const set = (patch: Partial<Care>) => setC((prev) => ({ ...prev, ...patch }));
   const med = c.type === "remedio";
   const anchored = isAnchored(c);
+  const bath = c.type === "banho";
+  const [bathOther, setBathOther] = useState(bath && !!initial.title && !BATH_KINDS.includes(initial.title));
 
   async function save(active = true) {
     if (!c.title.trim()) {
-      setError(med ? "Coloque o nome do remédio." : "Coloque um nome.");
+      setError(med ? "Coloque o nome do remédio." : bath ? "Escolha o tipo." : "Coloque um nome.");
       return;
     }
     setBusy(true);
@@ -148,21 +149,54 @@ function CareForm({ initial, onDone }: { initial: Care; onDone: () => void }) {
           />
         </div>
       )}
-      <TextField
-        label={med ? "Nome do remédio" : c.type === "consulta" ? "Descrição" : "Nome"}
-        value={c.title}
-        onChange={(v) => set({ title: v })}
-        placeholder={med ? "Ex.: Apoquel" : c.type === "outro" ? "Ex.: Cortar as unhas" : ""}
-        autoFocus={isNew && !c.title}
-      />
+      {bath && (
+        <div>
+          <span className="mb-2 block px-1 text-sm font-bold text-muted">Tipo</span>
+          <Pills
+            options={[...BATH_KINDS, "Outro"].map((k) => ({ value: k, label: k }))}
+            value={bathOther ? "Outro" : BATH_KINDS.includes(c.title) ? c.title : null}
+            onChange={(v) => (v === "Outro" ? (setBathOther(true), set({ title: "" })) : (setBathOther(false), set({ title: v })))}
+          />
+        </div>
+      )}
+      {(!bath || bathOther) && (
+        <TextField
+          label={med ? "Nome do remédio" : c.type === "consulta" ? "Descrição" : bath ? "Qual" : "Nome"}
+          value={c.title}
+          onChange={(v) => set({ title: v })}
+          placeholder={med ? "Ex.: Apoquel" : c.type === "outro" ? "Ex.: Cortar as unhas" : bath ? "Ex.: Hidratação" : ""}
+          autoFocus={isNew && !c.title}
+        />
+      )}
       {c.type === "antipulgas" && <FleaSafetyNote species={species} />}
+      {c.type === "antipulgas" && activeFleaCollars(cares, c.petId).length > 0 && (
+        <p role="alert" className="flex items-start gap-2 rounded-2xl bg-warn-soft px-4 py-3 text-sm font-semibold text-warn">
+          <TriangleAlert size={18} className="mt-0.5 shrink-0" />
+          {OVERLAP_TEXT}
+        </p>
+      )}
       {c.type !== "outro" && (
         <TextField
-          label={med ? "Dose" : c.type === "consulta" ? "Local" : "Produto (opcional)"}
+          label={med ? "Dose" : c.type === "consulta" ? "Local" : bath ? "Local / pet shop" : "Produto (opcional)"}
           value={c.detail ?? ""}
           onChange={(v) => set({ detail: v })}
-          placeholder={med ? "Ex.: 1 comprimido" : c.type === "consulta" ? "Ex.: Clínica Patas" : ""}
+          placeholder={med ? "Ex.: 1 comprimido" : c.type === "consulta" ? "Ex.: Clínica Patas" : bath ? "Nome do pet shop" : ""}
         />
+      )}
+      {bath && (
+        <div className="grid grid-cols-2 gap-3">
+          <TextField label="Telefone do local" type="tel" inputMode="tel" value={c.phone ?? ""} onChange={(v) => set({ phone: v || null })} placeholder="(11) 99999-9999" />
+          <TextField
+            label="Valor (opcional)"
+            inputMode="numeric"
+            value={c.price ? fmtMoney(c.price) : ""}
+            onChange={(v) => {
+              const cents = Number(v.replace(/D/g, "").slice(0, 8) || 0);
+              set({ price: cents ? cents / 100 : null });
+            }}
+            placeholder="R$ 0,00"
+          />
+        </div>
       )}
 
       {med ? (
@@ -193,11 +227,16 @@ function CareForm({ initial, onDone }: { initial: Care; onDone: () => void }) {
                   onChange={(t) => set({ times: c.freq === "horas" ? t.slice(0, 1) : t })}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <TextField label="Começa em" type="date" value={c.start} onChange={(v) => set({ start: v })} />
-                <TextField label="Termina em" type="date" value={c.end ?? ""} onChange={(v) => set({ end: v || null })} />
-              </div>
-              <p className="-mt-2 px-1 text-sm text-muted">Sem data de fim = uso contínuo.</p>
+              <DateInput label="Começa em" value={c.start} onChange={(v) => set({ start: v })} />
+              <DateInput label="Termina em" kind="por" optional base={c.start} value={c.end ?? ""} onChange={(v) => set({ end: v || null })} />
+              <p className="-mt-2 px-1 text-sm text-muted">
+                Sem data de fim = uso contínuo.
+                {c.end && (
+                  <button type="button" onClick={() => set({ end: null })} className="ml-2 font-bold text-olive underline">
+                    Tirar data de fim
+                  </button>
+                )}
+              </p>
             </>
           ) : (
             <DateTime date={date} time={time} onDate={setDate} onTime={setTime} />
@@ -220,31 +259,12 @@ function CareForm({ initial, onDone }: { initial: Care; onDone: () => void }) {
               />
             </div>
           ) : (
-            <label className="block">
-              <span className="mb-1 block px-1 text-sm font-bold text-muted">Repetir</span>
-              <select
-                value={`${c.freq}:${c.interval}`}
-                onChange={(e) => {
-                  const [f, n] = e.target.value.split(":");
-                  set({ freq: f as Freq, interval: Number(n), start: date });
-                }}
-                className="h-13 w-full rounded-2xl border-2 border-line bg-card px-4 font-bold outline-none focus:border-primary"
-              >
-                {!REPEAT_OPTIONS.some((o) => o.value === `${c.freq}:${c.interval}`) && (
-                  <option value={`${c.freq}:${c.interval}`}>
-                    A cada {c.interval} {c.freq}
-                  </option>
-                )}
-                {REPEAT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+            <div>
+              <RepeatPicker value={{ freq: c.freq, interval: c.interval }} onChange={(r) => set({ freq: r.freq, interval: r.interval, start: date })} />
               {(c.freq === "meses" || c.freq === "anos") && (
                 <span className="mt-1 block px-1 text-sm text-muted">A próxima conta a partir do dia em que for feito.</span>
               )}
-            </label>
+            </div>
           )}
         </>
       )}
@@ -278,9 +298,11 @@ function DateTime({
   label?: string;
 }) {
   return (
-    <div className="grid grid-cols-[1fr_auto] gap-3">
-      <TextField label={label} type="date" value={date} onChange={(v) => v && onDate(v)} />
-      <TextField label="Hora" type="time" value={time} onChange={(v) => v && onTime(v)} />
+    <div className="space-y-3">
+      <DateInput label={label} value={date} onChange={(v) => v && onDate(v)} />
+      <div className="w-36">
+        <TextField label="Hora" type="time" value={time} onChange={(v) => v && onTime(v)} />
+      </div>
     </div>
   );
 }

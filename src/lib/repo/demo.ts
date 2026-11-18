@@ -1,4 +1,4 @@
-import type { AppUser, Care, CareRecord, Expense, Pet, PetFields, Tutor } from "../types";
+import type { AppUser, Care, CareRecord, Expense, MedicalRecord, Pet, PetFields, Tutor } from "../types";
 import { newId } from "../onboarding";
 import type { Repo } from "./types";
 
@@ -16,6 +16,7 @@ interface DemoDb {
   cares: Care[];
   records: CareRecord[];
   expenses?: Expense[];
+  medical?: MedicalRecord[];
 }
 
 function load(): DemoDb {
@@ -223,6 +224,19 @@ export const demoRepo: Repo = {
     // no modo demonstração a "foto" já é a própria imagem
     return Object.fromEntries(paths.map((p) => [p, p]));
   },
+  async updateRecord(recordId, patch) {
+    const db = load();
+    const r = db.records.find((x) => x.id === recordId);
+    if (!r) throw new Error("Registro não encontrado.");
+    if (patch.doneAt) r.doneAt = patch.doneAt;
+    if (patch.note !== undefined) r.note = patch.note;
+    r.editedBy = USER.id;
+    r.editedAt = new Date().toISOString();
+    save(db);
+  },
+  async uploadPhoto(_petId, photo) {
+    return blobToDataUrl(photo);
+  },
   async updateRecordTime(recordId, doneAt) {
     const db = load();
     const r = db.records.find((x) => x.id === recordId);
@@ -263,6 +277,28 @@ export const demoRepo: Repo = {
     const db = load();
     db.expenses = (db.expenses ?? []).filter((e) => e.id !== id);
     save(db);
+  },
+  async listMedical(petId) {
+    return (load().medical ?? []).filter((m) => m.petId === petId).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt));
+  },
+  async saveMedical(m) {
+    await wait();
+    const db = load();
+    const list = db.medical ?? [];
+    const i = list.findIndex((x) => x.id === m.id);
+    if (i >= 0) list[i] = m;
+    else list.push(m);
+    db.medical = list;
+    save(db);
+  },
+  async deleteMedical(id) {
+    const db = load();
+    db.medical = (db.medical ?? []).filter((m) => m.id !== id);
+    save(db);
+  },
+  async uploadFile(_petId, file) {
+    // no modo demonstração o arquivo fica guardado no próprio aparelho
+    return blobToDataUrl(file);
   },
 
   async savePushSubscription() {

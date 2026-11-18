@@ -4,6 +4,8 @@ import { useCallback, useState } from "react";
 import { fmtTimeShort } from "@/lib/dates";
 import { nextAfter, type Occurrence } from "@/lib/schedule";
 import type { CareRecord } from "@/lib/types";
+import { toDateStr } from "@/lib/dates";
+import type { ExpenseAsk } from "../gastos/ask-expense";
 import { useApp } from "../app-provider";
 import { useToast } from "../ui/toast";
 
@@ -24,6 +26,8 @@ export function useTaskActions() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [already, setAlready] = useState<AlreadyDone | null>(null);
   const [editTime, setEditTime] = useState<CareRecord | null>(null);
+  /** Banho/tosa com valor: perguntar se lança em Gastos */
+  const [expenseAsk, setExpenseAsk] = useState<ExpenseAsk | null>(null);
 
   const undo = useCallback(
     async (recordId: string) => {
@@ -59,6 +63,9 @@ export function useTaskActions() {
         await reloadData();
         const record = res.record;
         repo.notifyDone(record.id).catch(() => {}); // avisa os outros tutores
+        if (occ.care.type === "banho" && occ.care.price) {
+          setExpenseAsk({ amount: occ.care.price, category: "banho", note: occ.care.title === "Banho e tosa" ? occ.care.detail : [occ.care.title, occ.care.detail].filter(Boolean).join(" · "), date: toDateStr(now) });
+        }
         toast(`Feito às ${fmtTimeShort(record.doneAt ?? now)} ✓`, {
           actions: [
             { label: "Mudar horário", onClick: () => setEditTime(record) },
@@ -131,5 +138,5 @@ export function useTaskActions() {
     [repo, reloadData, toast],
   );
 
-  return { busyId, complete, skip, snooze, undo, already, setAlready, editTime, setEditTime, saveTime };
+  return { busyId, complete, skip, snooze, undo, already, setAlready, editTime, setEditTime, saveTime, expenseAsk, setExpenseAsk };
 }

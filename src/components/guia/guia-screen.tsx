@@ -7,6 +7,7 @@ import { useState } from "react";
 import { ageText } from "@/lib/dates";
 import { CAT_SAFETY, guideFor, petPhase, type Phase, type TopicKey } from "@/lib/guide";
 import { useApp } from "../app-provider";
+import { FoodSummary } from "./food";
 import { PetAvatar } from "../shared/pet-avatar";
 import { TabShell } from "../shell/tab-shell";
 
@@ -161,6 +162,8 @@ export function GuiaScreen() {
           </div>
         </motion.div>
       </AnimatePresence>
+
+      <FoodSummary />
     </TabShell>
   );
 }

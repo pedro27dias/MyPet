@@ -1,11 +1,15 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { CalendarClock, PartyPopper } from "lucide-react";
+import { CalendarClock, PartyPopper, Siren } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { daysBetween, fmtDate, fmtRelativeDay, fmtTimeShort, greeting, sameDay, weekdayLong } from "@/lib/dates";
+import { useRouter } from "next/navigation";
+import { CollarMini } from "../coleira/collar-card";
+import { AskExpenseSheet } from "../gastos/ask-expense";
+import { addDays, startOfWeek, daysBetween, fmtDate, fmtRelativeDay, fmtTimeShort, greeting, sameDay, weekdayLong } from "@/lib/dates";
 import { dayOccurrences, nextAppointment, overdueOccurrences, type Occurrence } from "@/lib/schedule";
-import type { Care } from "@/lib/types";
+import type { Care, CareRecord } from "@/lib/types";
 import { useApp } from "../app-provider";
 import { CareIcon } from "../care/care-meta";
 import { CareFormSheet } from "../care/care-form";
@@ -20,7 +24,20 @@ import { NotificationsCard } from "../shared/notifications";
 
 /** Aba Início: saudação, atrasados, semana, tarefas do dia e próximo compromisso. */
 export function HomeScreen() {
-  const { pet, user, cares, records, dataReady } = useApp();
+  const { pet, user, cares, records: recent, dataReady, repo } = useApp();
+  const router = useRouter();
+  // Registros mais antigos, quando o calendário abre um mês passado
+  const [older, setOlder] = useState<CareRecord[]>([]);
+  const records = useMemo(() => {
+    if (!older.length) return recent;
+    const map = new Map(older.map((r) => [r.id, r]));
+    for (const r of recent) map.set(r.id, r);
+    return [...map.values()];
+  }, [older, recent]);
+  const loadFrom = (gridStart: Date) => {
+    if (!pet || gridStart >= addDays(startOfWeek(new Date()), -7)) return;
+    repo.listRecords(pet.id, gridStart.toISOString()).then(setOlder, () => {});
+  };
   const actions = useTaskActions();
   const [selected, setSelected] = useState(() => new Date());
   const [menu, setMenu] = useState<Occurrence | null>(null);
@@ -57,7 +74,14 @@ export function HomeScreen() {
         <header className="pb-6 pt-4">
           <div className="flex items-center gap-2 text-forest">
             <PetMark species={pet.species} size={40} />
-            <span className="titulo text-xl">MyPet</span>
+            <span className="titulo flex-1 text-xl">MyPet</span>
+            <Link
+              href="/emergencia"
+              aria-label="Central de emergência"
+              className="flex h-10 items-center gap-1.5 rounded-full bg-danger px-4 font-extrabold tracking-wide text-white shadow-card active:scale-95"
+            >
+              <Siren size={18} strokeWidth={2.5} /> SOS
+            </Link>
           </div>
           <div className="mt-5 flex items-center justify-between gap-4">
             <div className="min-w-0">
@@ -78,7 +102,10 @@ export function HomeScreen() {
                       : "Tudo em dia por aqui"}
               </p>
             </div>
-            <PetAvatar url={pet.photoUrl} species={pet.species} size={72} ring />
+            <Link href="/pet" aria-label={`Perfil de ${pet.name}`} className="relative shrink-0 active:scale-95">
+              <PetAvatar url={pet.photoUrl} species={pet.species} size={72} ring />
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-forest px-2 py-0.5 text-[10px] font-bold text-pink shadow-card">Perfil</span>
+            </Link>
           </div>
         </header>
       }
@@ -97,7 +124,13 @@ export function HomeScreen() {
             </section>
           )}
 
-          <WeekStrip cares={cares} records={records} selected={selected} onSelect={setSelected} />
+          <WeekStrip cares={cares} records={records} selected={selected} onSelect={setSelected} onMonthChange={loadFrom} />
+
+          {cares
+            .filter((c) => c.type === "coleira" && c.active)
+            .map((c) => (
+              <CollarMini key={c.id} care={c} pet={pet} onOpen={() => router.push("/cuidados")} />
+            ))}
 
           <section>
             <h2 className="mb-2 px-1 titulo text-xl">
@@ -136,6 +169,7 @@ export function HomeScreen() {
       />
       <EditTimeSheet record={actions.editTime} onClose={() => actions.setEditTime(null)} onSave={actions.saveTime} />
       <CareFormSheet care={editing} open={!!editing} onClose={() => setEditing(null)} />
+      <AskExpenseSheet ask={actions.expenseAsk} onClose={() => actions.setExpenseAsk(null)} />
     </TabShell>
   );
 }

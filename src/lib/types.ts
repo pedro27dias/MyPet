@@ -35,6 +35,57 @@ export interface PetFields {
   otherAnimals: OtherAnimal[] | null;
   felvTest: FelvTest | null;
   foodType: FoodType | null;
+  // SQL 007 (opcionais)
+  /** Categorias de gasto criadas pelos tutores */
+  expenseCategories?: string[] | null;
+  plan?: HealthPlan | null;
+  emergency?: EmergencyContacts | null;
+}
+
+/** Plano de saúde do pet (pets.plano) */
+export interface HealthPlan {
+  operator: string | null;
+  name: string | null;
+  card: string | null;
+  /** AAAA-MM-DD */
+  validUntil: string | null;
+  phone: string | null;
+  waiting: string | null;
+  coverage: string | null;
+  notes: string | null;
+  /** PDF do contrato/carteirinha (Storage) */
+  pdf: string | null;
+}
+
+/** Central de emergência (pets.emergencia): visível para todos os tutores */
+export interface EmergencyContacts {
+  clinic: { name: string; address: string | null; phone: string | null; whatsapp: string | null; h24: boolean } | null;
+}
+
+export type MedicalKind = "consulta" | "exame" | "teste" | "cirurgia" | "diagnostico" | "receita";
+
+export interface Attachment {
+  path: string;
+  name: string;
+  /** image/jpeg, application/pdf... */
+  type: string;
+}
+
+/** Registro do prontuário (tabela prontuario) */
+export interface MedicalRecord {
+  id: string;
+  petId: string;
+  kind: MedicalKind;
+  /** AAAA-MM-DD */
+  date: string;
+  title: string;
+  clinic: string | null;
+  summary: string | null;
+  tags: string[];
+  attachments: Attachment[];
+  price: number | null;
+  by: string | null;
+  createdAt: string;
 }
 
 export interface Pet extends PetFields {
@@ -46,7 +97,10 @@ export interface Pet extends PetFields {
 }
 
 /** exame = testes com resultado (ex.: FeLV/FIV dos gatos); aparecem no cartão de vacina. */
-export type CareType = "remedio" | "vacina" | "vermifugo" | "antipulgas" | "consulta" | "exame" | "outro";
+export type CareType = "remedio" | "vacina" | "vermifugo" | "antipulgas" | "coleira" | "banho" | "consulta" | "exame" | "outro";
+
+/** Contra o quê a coleira protege. leish = mosquito-palha / leishmaniose (só cães). */
+export type CollarTarget = "leish" | "pulgas" | "carrapatos";
 
 /**
  * unica = uma vez · horas/diaria/semanal/dias = horários fixos (remédios) ·
@@ -75,6 +129,17 @@ export interface Care {
   active: boolean;
   /** Quando foi criado (ISO). Horários fixos antes disso não contam. */
   createdAt?: string;
+  // Coleira
+  protects?: CollarTarget[] | null;
+  /** Foto da embalagem (caminho no Storage, ou a imagem no modo demonstração). */
+  photo?: string | null;
+  /** Idade mínima da marca, em semanas. */
+  minAgeWeeks?: number | null;
+  // Banho e tosa
+  /** Telefone do local */
+  phone?: string | null;
+  /** Valor (R$) */
+  price?: number | null;
 }
 
 export type RecordStatus = "feito" | "pulado" | "adiado";
@@ -96,6 +161,11 @@ export interface CareRecord {
   labelPhoto?: string | null;
   /** Resultado de exame/teste (ex.: "Negativo"). */
   result?: string | null;
+  /** Observação escrita no histórico. */
+  note?: string | null;
+  /** Quem corrigiu por último (horário/observação) e quando. */
+  editedBy?: string | null;
+  editedAt?: string | null;
   createdAt: string;
 }
 
@@ -121,7 +191,20 @@ export interface InvitePreview {
   valid: boolean;
 }
 
-export type ExpenseCategory = "racao" | "vet" | "remedio" | "banho" | "outros";
+/** vet = Consultas · c:Nome = categoria criada pelos tutores */
+export type ExpenseCategory =
+  | "racao"
+  | "petiscos"
+  | "vet"
+  | "exames"
+  | "remedio"
+  | "vacinas"
+  | "antipulgas"
+  | "banho"
+  | "plano"
+  | "acessorios"
+  | "outros"
+  | `c:${string}`;
 
 export interface Expense {
   id: string;
@@ -134,4 +217,6 @@ export interface Expense {
   /** Quem pagou (id do tutor) */
   paidBy: string | null;
   note: string | null;
+  /** Foto do recibo (Storage) */
+  receipt?: string | null;
 }

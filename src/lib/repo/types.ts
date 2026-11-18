@@ -1,4 +1,4 @@
-import type { AppUser, Care, CareRecord, CompleteResult, Expense, InvitePreview, Pet, PetFields, Tutor } from "../types";
+import type { AppUser, Care, CareRecord, CompleteResult, Expense, InvitePreview, MedicalRecord, Pet, PetFields, Tutor } from "../types";
 
 /**
  * Tudo que o app lê e grava passa por aqui. Duas versões com o mesmo jeito de usar:
@@ -41,11 +41,23 @@ export interface Repo {
   }): Promise<CompleteResult>;
   snooze(care: Care, occurrence: string, until: string): Promise<void>;
   updateRecordTime(recordId: string, doneAt: string): Promise<void>;
+  /** Corrige horário e/ou observação de um registro (grava quem editou). */
+  updateRecord(recordId: string, patch: { doneAt?: string; note?: string | null }): Promise<void>;
+  /** Guarda uma foto do pet (ex.: embalagem da coleira) e devolve o caminho. */
+  uploadPhoto(petId: string, photo: Blob, prefix: string): Promise<string>;
   /** Registro direto no cartão de vacina (aplicação já feita). Se `next` vier, vira a próxima data do cuidado. */
   addRecord(args: { care: Care; at: string; clinic?: string | null; photo?: Blob | null; next?: string | null; result?: string | null }): Promise<void>;
   /** Links para mostrar fotos guardadas (etiquetas). */
   photoUrls(paths: string[]): Promise<Record<string, string>>;
   undo(recordId: string): Promise<void>;
+
+  // Prontuário
+  listMedical(petId: string): Promise<MedicalRecord[]>;
+  /** Cria ou corrige um registro clínico. */
+  saveMedical(r: MedicalRecord): Promise<void>;
+  deleteMedical(id: string): Promise<void>;
+  /** Guarda um arquivo (foto ou PDF) do pet e devolve o caminho. */
+  uploadFile(petId: string, file: Blob, prefix: string, ext: string): Promise<string>;
 
   // Gastos
   /** Gastos do pet entre duas datas (AAAA-MM-DD, inclusive). */

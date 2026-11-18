@@ -1,6 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 import { friendlyError, supabase } from "../supabase";
-import type { AppUser, Care, CareRecord, Expense, Pet, PetFields, RecordStatus, Role } from "../types";
+import type { AppUser, Care, CareRecord, Expense, MedicalRecord, Pet, PetFields, RecordStatus, Role } from "../types";
 import type { Repo } from "./types";
 
 /* Versão "nuvem": Supabase. Nomes do banco em português ↔ tipos do app em inglês. */
@@ -8,6 +8,10 @@ import type { Repo } from "./types";
 type Row = Record<string, unknown>;
 const BUCKET = "fotos-pets";
 const MISSING_005 = "Falta atualizar o banco: rode o arquivo 005_gatos.sql no Supabase.";
+const MISSING_007 = "Falta atualizar o banco: rode o arquivo 007_prontuario_gastos_plano.sql no Supabase.";
+const COLS_007 = /prontuario|telefone|valor|recibo|categorias_gasto|plano|emergencia|gastos_categoria_check/;
+const MISSING_006 = "Falta atualizar o banco: rode o arquivo 006_coleira_historico.sql no Supabase.";
+const COLS_006 = /protege|idade_min_semanas|observacao|editado_por|editado_em|cuidados_tipo_check|column cuidados.foto|'foto'/;
 
 function fail(e: unknown): never {
   throw new Error(friendlyError(e));
@@ -51,6 +55,9 @@ function petFromRow(r: Row, role: Role, photoUrl: string | null): Pet {
     otherAnimals: (r.outros_animais as Pet["otherAnimals"]) ?? null,
     felvTest: (r.teste_felv_fiv as Pet["felvTest"]) ?? null,
     foodType: (r.racao_tipo as Pet["foodType"]) ?? null,
+    expenseCategories: (r.categorias_gasto as string[]) ?? null,
+    plan: (r.plano as Pet["plan"]) ?? null,
+    emergency: (r.emergencia as Pet["emergency"]) ?? null,
     role,
   };
 }
@@ -61,6 +68,9 @@ const PET_COLUMNS: Record<keyof PetFields, string> = {
   otherAnimals: "outros_animais",
   felvTest: "teste_felv_fiv",
   foodType: "racao_tipo",
+  expenseCategories: "categorias_gasto",
+  plan: "plano",
+  emergency: "emergencia",
   name: "nome",
   breed: "raca",
   sex: "sexo",
@@ -102,6 +112,11 @@ export function careFromRow(r: Row): Care {
     notifyBeforeMin: (r.antecedencia_min as number) ?? null,
     active: Boolean(r.ativo),
     createdAt: r.criado_em as string,
+    protects: (r.protege as Care["protects"]) ?? null,
+    photo: (r.foto as string) ?? null,
+    minAgeWeeks: (r.idade_min_semanas as number) ?? null,
+    phone: (r.telefone as string) ?? null,
+    price: r.valor == null ? null : Number(r.valor),
   };
 }
 
@@ -121,6 +136,12 @@ function careToRow(c: Care): Row {
     proxima_em: c.nextAt,
     antecedencia_min: c.notifyBeforeMin,
     ativo: c.active,
+    // colunas do SQL 006: só vão quando usadas (o resto funciona mesmo antes de rodar o 006)
+    ...(c.protects?.length ? { protege: c.protects } : {}),
+    ...(c.photo ? { foto: c.photo } : {}),
+    ...(c.minAgeWeeks ? { idade_min_semanas: c.minAgeWeeks } : {}),
+    ...(c.phone ? { telefone: c.phone } : {}),
+    ...(c.price ? { valor: c.price } : {}),
   };
 }
 
@@ -138,6 +159,9 @@ export function recordFromRow(r: Row): CareRecord {
     clinic: (r.clinica as string) ?? null,
     labelPhoto: (r.lote_foto as string) ?? null,
     result: (r.resultado as string) ?? null,
+    note: (r.observacao as string) ?? null,
+    editedBy: (r.editado_por as string) ?? null,
+    editedAt: (r.editado_em as string) ?? null,
     createdAt: r.criado_em as string,
   };
 }
@@ -226,6 +250,7 @@ export const cloudRepo: Repo = {
 
   async updatePet(id, patch) {
     const res = await supabase().from("pets").update(petToRow(patch)).eq("id", id).select("id");
+    if (res.error && /categorias_gasto|plano|emergencia/.test(res.error.message)) throw new Error(MISSING_007);
     if (res.error && /especie|estilo_vida|outros_animais|teste_felv_fiv|racao_tipo/.test(res.error.message)) throw new Error(MISSING_005);
     expectRows(res);
   },
@@ -257,7 +282,10 @@ export const cloudRepo: Repo = {
   async saveCare(care) {
     const row = { ...careToRow(care), atualizado_em: new Date().toISOString() };
     const res = await supabase().from("cuidados").upsert(row).select("id");
+    if (res.error && (care.type === "banho" || COLS_007.test(res.error.message))) throw new Error(MISSING_007);
+    if (res.error && care.type === "coleira" && COLS_006.test(res.error.message)) throw new Error(MISSING_006);
     if (res.error && /cuidados_tipo_check/.test(res.error.message)) throw new Error(MISSING_005);
+    if (res.error && COLS_006.test(res.error.message)) throw new Error(MISSING_006);
     expectRows(res);
   },
 
@@ -325,6 +353,23 @@ export const cloudRepo: Repo = {
     expectRows(await supabase().from("registros").update({ feito_em: doneAt }).eq("id", recordId).select("id"));
   },
 
+  async updateRecord(recordId, patch) {
+    const me = await uid();
+    const row: Row = { editado_por: me, editado_em: new Date().toISOString() };
+    if (patch.doneAt) row.feito_em = patch.doneAt;
+    if (patch.note !== undefined) row.observacao = patch.note;
+    const res = await supabase().from("registros").update(row).eq("id", recordId).select("id");
+    if (res.error && COLS_006.test(res.error.message)) throw new Error(MISSING_006);
+    expectRows(res);
+  },
+
+  async uploadPhoto(petId, photo, prefix) {
+    const path = `${petId}/${prefix}-${Date.now()}.jpg`;
+    const up = await supabase().storage.from(BUCKET).upload(path, photo, { contentType: "image/jpeg" });
+    if (up.error) fail(up.error);
+    return path;
+  },
+
   async undo(recordId) {
     const { error } = await supabase().rpc("desfazer_registro", { p_registro: recordId });
     if (error) fail(error);
@@ -353,18 +398,85 @@ export const cloudRepo: Repo = {
       date: r.data as string,
       paidBy: (r.pago_por as string) ?? null,
       note: (r.descricao as string) ?? null,
+      receipt: (r.recibo as string) ?? null,
     }));
   },
 
   async saveExpense(e) {
     const res = await supabase()
       .from("gastos")
-      .upsert({ id: e.id, pet_id: e.petId, valor: e.amount, categoria: e.category, data: e.date, pago_por: e.paidBy, descricao: e.note })
+      .upsert({
+        id: e.id,
+        pet_id: e.petId,
+        valor: e.amount,
+        categoria: e.category,
+        data: e.date,
+        pago_por: e.paidBy,
+        descricao: e.note,
+        ...(e.receipt ? { recibo: e.receipt } : {}),
+      })
       .select("id");
+    if (res.error && /recibo|gastos_categoria_check/.test(res.error.message)) throw new Error(MISSING_007);
     if (res.error && /gastos/.test(res.error.message)) {
       throw new Error("Falta atualizar o banco: rode o arquivo 003_gastos.sql no Supabase.");
     }
     expectRows(res);
+  },
+
+  async listMedical(petId) {
+    const res = await supabase().from("prontuario").select("*").eq("pet_id", petId).order("data", { ascending: false }).order("criado_em", { ascending: false });
+    if (res.error) {
+      if (/prontuario/.test(res.error.message)) throw new Error(MISSING_007);
+      fail(res.error);
+    }
+    return (res.data ?? []).map(
+      (r): MedicalRecord => ({
+        id: r.id as string,
+        petId: r.pet_id as string,
+        kind: r.tipo as MedicalRecord["kind"],
+        date: r.data as string,
+        title: r.titulo as string,
+        clinic: (r.clinica as string) ?? null,
+        summary: (r.resumo as string) ?? null,
+        tags: (r.tags as string[]) ?? [],
+        attachments: (r.anexos as MedicalRecord["attachments"]) ?? [],
+        price: r.valor == null ? null : Number(r.valor),
+        by: (r.criado_por as string) ?? null,
+        createdAt: r.criado_em as string,
+      }),
+    );
+  },
+
+  async saveMedical(m) {
+    const res = await supabase()
+      .from("prontuario")
+      .upsert({
+        id: m.id,
+        pet_id: m.petId,
+        tipo: m.kind,
+        data: m.date,
+        titulo: m.title,
+        clinica: m.clinic,
+        resumo: m.summary,
+        tags: m.tags,
+        anexos: m.attachments,
+        valor: m.price,
+        atualizado_em: new Date().toISOString(),
+      })
+      .select("id");
+    if (res.error && /prontuario/.test(res.error.message)) throw new Error(MISSING_007);
+    expectRows(res);
+  },
+
+  async deleteMedical(id) {
+    expectRows(await supabase().from("prontuario").delete().eq("id", id).select("id"));
+  },
+
+  async uploadFile(petId, file, prefix, ext) {
+    const path = `${petId}/${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+    const up = await supabase().storage.from(BUCKET).upload(path, file, { contentType: file.type || undefined });
+    if (up.error) fail(up.error);
+    return path;
   },
 
   async deleteExpense(id) {
@@ -438,8 +550,14 @@ export const cloudRepo: Repo = {
       .on("postgres_changes", { event: "*", schema: "public", table: "cuidados", filter: `pet_id=eq.${petId}` }, onChange)
       .on("postgres_changes", { event: "*", schema: "public", table: "gastos", filter: `pet_id=eq.${petId}` }, onChange)
       .subscribe();
+    // prontuário em canal separado: se a tabela ainda não existir (SQL 007), não derruba os outros avisos
+    const extra = supabase()
+      .channel(`pet-${petId}-prontuario`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "prontuario", filter: `pet_id=eq.${petId}` }, onChange)
+      .subscribe();
     return () => {
       supabase().removeChannel(channel);
+      supabase().removeChannel(extra);
     };
   },
 };

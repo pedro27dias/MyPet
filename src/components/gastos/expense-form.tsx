@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+/* eslint-disable @next/next/no-img-element -- prévia local do recibo */
+import { Camera, Plus, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { newId } from "@/lib/onboarding";
 import { fmtMoney } from "@/lib/money";
+import { compressPhoto } from "@/lib/photo";
 import { todayStr } from "@/lib/dates";
 import type { Expense, ExpenseCategory } from "@/lib/types";
 import { useApp } from "../app-provider";
@@ -10,30 +13,85 @@ import { Button } from "../ui/button";
 import { TextField } from "../ui/fields";
 import { Sheet } from "../ui/sheet";
 import { useToast } from "../ui/toast";
-import { EXPENSE_META, EXPENSE_ORDER } from "./expense-meta";
+import { EXPENSE_ORDER, expenseMeta } from "./expense-meta";
 
-/** Janela de lançar (ou corrigir) um gasto: valor, categoria, data, quem pagou. */
-export function ExpenseSheet({ open, expense, onClose }: { open: boolean; expense?: Expense | null; onClose: () => void }) {
+/**
+ * Lançar (ou corrigir) um gasto: valor, categoria (padrão ou criada), data, descrição, quem pagou
+ * e foto do recibo. `preset` preenche quando o gasto vem de outro lugar (banho, consulta, exame).
+ */
+export function ExpenseSheet({
+  open,
+  expense,
+  preset,
+  onClose,
+}: {
+  open: boolean;
+  expense?: Expense | null;
+  preset?: Partial<Expense> | null;
+  onClose: () => void;
+}) {
   return (
     <Sheet open={open} onClose={onClose} title={expense ? "Corrigir gasto" : "Novo gasto"}>
-      {open && <ExpenseForm key={expense?.id ?? "novo"} expense={expense ?? null} onDone={onClose} />}
+      {open && <ExpenseForm key={expense?.id ?? "novo"} expense={expense ?? null} preset={preset ?? null} onDone={onClose} />}
     </Sheet>
   );
 }
 
-function ExpenseForm({ expense, onDone }: { expense: Expense | null; onDone: () => void }) {
-  const { repo, pet, user, tutors, reloadData } = useApp();
+function ExpenseForm({ expense, preset, onDone }: { expense: Expense | null; preset: Partial<Expense> | null; onDone: () => void }) {
+  const { repo, pet, user, tutors, reloadData, reloadPets } = useApp();
   const toast = useToast();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const init = expense ?? preset;
   // valor guardado em centavos: digitar "4590" vira R$ 45,90 (rápido no teclado numérico)
-  const [cents, setCents] = useState(expense ? Math.round(expense.amount * 100) : 0);
-  const [category, setCategory] = useState<ExpenseCategory | null>(expense?.category ?? null);
-  const [date, setDate] = useState(expense?.date ?? todayStr());
-  const [paidBy, setPaidBy] = useState<string | null>(expense ? expense.paidBy : user.id);
-  const [note, setNote] = useState(expense?.note ?? "");
+  const [cents, setCents] = useState(init?.amount ? Math.round(init.amount * 100) : 0);
+  const [category, setCategory] = useState<ExpenseCategory | null>(init?.category ?? null);
+  const [date, setDate] = useState(init?.date ?? todayStr());
+  const [paidBy, setPaidBy] = useState<string | null>(expense ? expense.paidBy : (preset?.paidBy ?? user.id));
+  const [note, setNote] = useState(init?.note ?? "");
+  const [receipt, setReceipt] = useState<Blob | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [newCat, setNewCat] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!expense?.receipt) return;
+    repo.photoUrls([expense.receipt]).then((u) => setPreview((p) => p ?? u[expense.receipt!] ?? null), () => {});
+  }, [repo, expense?.receipt]);
+
   if (!pet) return null;
+  const custom = (pet.expenseCategories ?? []).map((n) => `c:${n}` as ExpenseCategory);
+  const categories: ExpenseCategory[] = [...EXPENSE_ORDER, ...custom];
+  if (category && !categories.includes(category)) categories.push(category);
+
+  async function addCategory() {
+    if (!pet) return;
+    const name = newCat.trim();
+    if (!name) return;
+    try {
+      const list = [...new Set([...(pet.expenseCategories ?? []), name])];
+      await repo.updatePet(pet.id, { expenseCategories: list });
+      await reloadPets(pet.id);
+      setCategory(`c:${name}`);
+      setCreating(false);
+      setNewCat("");
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
+
+  async function pick(file?: File) {
+    if (!file) return;
+    try {
+      const b = await compressPhoto(file, 1200);
+      setReceipt(b);
+      setPreview(URL.createObjectURL(b));
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
 
   async function save() {
     if (!pet) return;
@@ -42,6 +100,7 @@ function ExpenseForm({ expense, onDone }: { expense: Expense | null; onDone: () 
     setBusy(true);
     setError(null);
     try {
+      const path = receipt ? await repo.uploadFile(pet.id, receipt, "recibo", "jpg") : (expense?.receipt ?? null);
       await repo.saveExpense({
         id: expense?.id ?? newId(),
         petId: pet.id,
@@ -50,6 +109,7 @@ function ExpenseForm({ expense, onDone }: { expense: Expense | null; onDone: () 
         date,
         paidBy,
         note: note.trim() || null,
+        receipt: preview ? path : null,
       });
       await reloadData();
       toast(expense ? "Gasto corrigido ✓" : `${fmtMoney(cents / 100)} lançado ✓`);
@@ -84,7 +144,7 @@ function ExpenseForm({ expense, onDone }: { expense: Expense | null; onDone: () 
         <span className="block text-sm font-bold text-muted">Valor</span>
         <input
           inputMode="numeric"
-          autoFocus={!expense}
+          autoFocus={!expense && !preset}
           aria-label="Valor em reais"
           value={fmtMoney(cents / 100)}
           onChange={(e) => {
@@ -98,9 +158,9 @@ function ExpenseForm({ expense, onDone }: { expense: Expense | null; onDone: () 
       {/* Categoria */}
       <div>
         <span className="mb-2 block px-1 text-sm font-bold text-muted">Categoria</span>
-        <div className="grid grid-cols-5 gap-2">
-          {EXPENSE_ORDER.map((c) => {
-            const m = EXPENSE_META[c];
+        <div className="grid grid-cols-4 gap-2">
+          {categories.map((c) => {
+            const m = expenseMeta(c);
             const sel = category === c;
             return (
               <button
@@ -110,14 +170,34 @@ function ExpenseForm({ expense, onDone }: { expense: Expense | null; onDone: () 
                 onClick={() => setCategory(c)}
                 className={`flex flex-col items-center gap-1.5 rounded-2xl p-2 transition active:scale-95 ${sel ? "bg-forest text-pink" : "bg-card ring-2 ring-line"}`}
               >
-                <span className={`grid size-10 place-items-center rounded-xl ${sel ? "bg-pink/20 text-pink" : `${m.bg} ${m.fg}`}`}>
-                  <m.Icon size={20} strokeWidth={2.2} />
+                <span className={`grid size-9 place-items-center rounded-xl ${sel ? "bg-pink/20 text-pink" : `${m.bg} ${m.fg}`}`}>
+                  <m.Icon size={18} strokeWidth={2.2} />
                 </span>
-                <span className={`text-[11px] font-bold leading-tight ${sel ? "text-pink" : "text-forest"}`}>{m.label.split(" ")[0]}</span>
+                <span className={`line-clamp-2 text-center text-[11px] font-bold leading-tight ${sel ? "text-pink" : "text-forest"}`}>{m.label.split("/")[0]}</span>
               </button>
             );
           })}
+          <button
+            type="button"
+            onClick={() => setCreating(true)}
+            className="flex flex-col items-center gap-1.5 rounded-2xl border-2 border-dashed border-line p-2 text-olive active:scale-95"
+          >
+            <span className="grid size-9 place-items-center rounded-xl bg-bg">
+              <Plus size={18} />
+            </span>
+            <span className="text-[11px] font-bold leading-tight">Criar categoria</span>
+          </button>
         </div>
+        {creating && (
+          <div className="mt-3 flex gap-2">
+            <div className="flex-1">
+              <TextField value={newCat} onChange={setNewCat} placeholder="Ex.: Creche, Adestramento" autoFocus maxLength={24} />
+            </div>
+            <Button onClick={addCategory} disabled={!newCat.trim()}>
+              Criar
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -144,6 +224,33 @@ function ExpenseForm({ expense, onDone }: { expense: Expense | null; onDone: () 
             );
           })}
         </div>
+      </div>
+
+      {/* Recibo */}
+      <div>
+        <span className="mb-1 block px-1 text-sm font-bold text-muted">Recibo (opcional)</span>
+        {preview ? (
+          <div className="relative w-fit">
+            <img src={preview} alt="Recibo" className="h-24 rounded-2xl object-cover" />
+            <button
+              type="button"
+              aria-label="Tirar recibo"
+              onClick={() => (setReceipt(null), setPreview(null))}
+              className="absolute -right-2 -top-2 grid size-8 place-items-center rounded-full bg-forest text-pink"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-line font-bold text-olive"
+          >
+            <Camera size={18} /> Foto do recibo
+          </button>
+        )}
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => pick(e.target.files?.[0])} />
       </div>
 
       {error && <p className="rounded-2xl bg-danger-soft px-4 py-3 text-sm font-semibold text-danger">{error}</p>}

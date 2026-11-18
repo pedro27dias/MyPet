@@ -1,10 +1,12 @@
 "use client";
 
-import { Camera, LogOut, Pencil, Phone, Plus, UserPlus } from "lucide-react";
+import { ArrowLeft, Camera, LogOut, Pencil, Phone, Plus, UserPlus } from "lucide-react";
+import Link from "next/link";
+import { HealthPlanCard } from "./health-plan";
+import { EmergencyCard } from "../emergencia/emergency";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { ExpensesPanel } from "../gastos/expenses-panel";
 import { EditPetSheet } from "./edit-pet-sheet";
 import { NotificationsSetting } from "../shared/notifications";
 import { ageText, fmtDate } from "@/lib/dates";
@@ -20,7 +22,7 @@ import { useToast } from "../ui/toast";
 
 const SECTIONS = [
   { key: "perfil", label: "Perfil" },
-  { key: "gastos", label: "Gastos" },
+  { key: "saude", label: "Saúde" },
   { key: "tutores", label: "Tutores" },
 ] as const;
 
@@ -31,7 +33,7 @@ const FELV = { negativo: "Negativo", positivo: "Positivo", nao_fez: "Não fez", 
 const FOOD = { seca: "Seca", umida: "Úmida", mista: "Mista" };
 const ORIGIN = { adotado: "Adotado (lar/ONG)", resgatado: "Resgatado da rua", comprado: "Comprado", presente: "Ganhou de presente", outro: "Outro" };
 
-/** Aba Pet: Perfil (dados e foto), Gastos (total do mês, por categoria, lista) e Tutores (convite). */
+/** Perfil do pet (abre pela foto no Início): Perfil (dados e foto), Saúde (plano e emergência) e Tutores. */
 export function PetScreen() {
   const { pet, tutors, repo, user, reloadPets } = useApp();
   const router = useRouter();
@@ -104,7 +106,10 @@ export function PetScreen() {
 
   return (
     <TabShell>
-      <div className="flex flex-col items-center pt-6 text-center">
+      <Link href="/" aria-label="Voltar ao Início" className="mt-3 grid size-11 place-items-center rounded-full bg-card shadow-card">
+        <ArrowLeft size={20} />
+      </Link>
+      <div className="-mt-6 flex flex-col items-center text-center">
         <button type="button" onClick={() => fileRef.current?.click()} className="relative" aria-label="Trocar foto" disabled={photoBusy}>
           <PetAvatar url={pet.photoUrl} species={pet.species} size={112} ring />
           <span className="absolute bottom-0 right-0 grid size-9 place-items-center rounded-full bg-forest text-pink ring-4 ring-bg">
@@ -163,7 +168,12 @@ export function PetScreen() {
             </>
           )}
 
-          {tab === "gastos" && <ExpensesPanel />}
+          {tab === "saude" && (
+            <div className="space-y-4">
+              <HealthPlanCard pet={pet} />
+              <EmergencyCard pet={pet} />
+            </div>
+          )}
 
           {tab === "tutores" && (
             <section className="space-y-2">

@@ -24,7 +24,13 @@ const isFelvVaccine = (c: Care) => /felv/.test(normalize(c.title)) && !/teste/.t
 export const CARD_SECTIONS: CardSection[] = [
   { key: "vacina", title: "Vacinas", empty: "Nenhuma vacina registrada ainda.", type: "vacina", match: (c) => c.type === "vacina" },
   { key: "vermifugo", title: "Vermífugo", empty: "Nenhum vermífugo registrado ainda.", type: "vermifugo", match: (c) => c.type === "vermifugo" },
-  { key: "antipulgas", title: "Pulgas e carrapatos", empty: "Nenhuma proteção registrada ainda.", type: "antipulgas", match: (c) => c.type === "antipulgas" },
+  {
+    key: "antipulgas",
+    title: "Pulgas, carrapatos e coleiras",
+    empty: "Nenhuma proteção registrada ainda.",
+    type: "antipulgas",
+    match: (c) => c.type === "antipulgas" || c.type === "coleira",
+  },
 ];
 
 /** Gato: Polivalente, Antirrábica, FeLV, Testes (FeLV/FIV), Vermífugo e Antipulgas. */
@@ -41,7 +47,7 @@ export const CAT_CARD_SECTIONS: CardSection[] = [
   { key: "felv", title: "FeLV", empty: "Nenhuma dose registrada ainda.", type: "vacina", match: (c) => c.type === "vacina" && isFelvVaccine(c) },
   { key: "testes", title: "Testes", empty: "Nenhum teste registrado (FeLV/FIV).", type: "exame", match: (c) => c.type === "exame" },
   { key: "vermifugo", title: "Vermífugo", empty: "Nenhum vermífugo registrado ainda.", type: "vermifugo", match: (c) => c.type === "vermifugo" },
-  { key: "antipulgas", title: "Antipulgas", empty: "Nenhuma proteção registrada ainda.", type: "antipulgas", match: (c) => c.type === "antipulgas" },
+  { key: "antipulgas", title: "Antipulgas e coleiras", empty: "Nenhuma proteção registrada ainda.", type: "antipulgas", match: (c) => c.type === "antipulgas" || c.type === "coleira" },
 ];
 
 export function cardSections(species: Species | undefined): CardSection[] {
@@ -140,7 +146,7 @@ export function cardPages(cares: Care[], records: CareRecord[], species?: Specie
   return pages;
 }
 
-export const CARD_TYPES: CareType[] = ["vacina", "vermifugo", "antipulgas", "exame"];
+export const CARD_TYPES: CareType[] = ["vacina", "vermifugo", "antipulgas", "coleira", "exame"];
 
 // ---------------------------------------------------------------------------------------------
 // Exportar como imagem (para mandar ao veterinário)

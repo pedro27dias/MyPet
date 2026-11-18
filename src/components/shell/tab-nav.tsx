@@ -3,16 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
-import { BookOpen, Cat, Dog, House, ListChecks, Plus } from "lucide-react";
+import { BookOpen, House, ListChecks, Plus, Wallet } from "lucide-react";
 import { useState } from "react";
 import { AddMenu } from "../care/add-menu";
-import { useApp } from "../app-provider";
 
 const TABS = [
   { href: "/", label: "Início", Icon: House },
   { href: "/cuidados", label: "Cuidados", Icon: ListChecks },
+  { href: "/gastos", label: "Gastos", Icon: Wallet },
   { href: "/guia", label: "Guia", Icon: BookOpen },
-  { href: "/pet", label: "Pet", Icon: Dog },
 ];
 
 /**
@@ -22,16 +21,14 @@ const TABS = [
 export function TabNav() {
   const pathname = usePathname();
   const [addOpen, setAddOpen] = useState(false);
-  const { pet } = useApp();
-  // aba Pet: gato ou cachorro, conforme o pet escolhido
-  const tabs = TABS.map((t) => (t.href === "/pet" && pet?.species === "gato" ? { ...t, Icon: Cat } : t));
+  const tabs = TABS;
 
   return (
     <>
       <nav className="pb-safe pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4" aria-label="Menu">
         <div className="pointer-events-auto relative mx-auto grid h-16 max-w-sm grid-cols-5 items-center rounded-full bg-forest px-2 shadow-float">
           {tabs.slice(0, 2).map((t) => (
-            <TabLink key={t.href} {...t} active={pathname === t.href} />
+            <TabLink key={t.href} {...t} active={pathname === t.href || (t.href !== "/" && pathname.startsWith(`${t.href}/`))} />
           ))}
           <div className="flex justify-center">
             <motion.button
@@ -48,7 +45,7 @@ export function TabNav() {
             </motion.button>
           </div>
           {tabs.slice(2).map((t) => (
-            <TabLink key={t.href} {...t} active={pathname === t.href} />
+            <TabLink key={t.href} {...t} active={pathname === t.href || (t.href !== "/" && pathname.startsWith(`${t.href}/`))} />
           ))}
         </div>
       </nav>

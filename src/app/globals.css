@@ -47,6 +47,14 @@
   --t-consulta-soft: #ffe7ed;
   --t-outro: #6b6f68;
   --t-outro-soft: #f0f0ee;
+  --t-banho: #4f7f9e;
+  --t-banho-soft: #e6eff5;
+  --t-petisco: #c27c3e;
+  --t-petisco-soft: #f9ece0;
+  --t-plano: #3f7d74;
+  --t-plano-soft: #e3f0ee;
+  --t-brinquedo: #a0607e;
+  --t-brinquedo-soft: #f6e8ef;
 
   --shadow-card: 0 1px 2px rgb(43 67 33 / 0.04), 0 8px 24px rgb(43 67 33 / 0.06);
   --shadow-float: 0 14px 34px rgb(43 67 33 / 0.22);
@@ -95,6 +103,14 @@
   --color-t-consulta-soft: var(--t-consulta-soft);
   --color-t-outro: var(--t-outro);
   --color-t-outro-soft: var(--t-outro-soft);
+  --color-t-banho: var(--t-banho);
+  --color-t-banho-soft: var(--t-banho-soft);
+  --color-t-petisco: var(--t-petisco);
+  --color-t-petisco-soft: var(--t-petisco-soft);
+  --color-t-plano: var(--t-plano);
+  --color-t-plano-soft: var(--t-plano-soft);
+  --color-t-brinquedo: var(--t-brinquedo);
+  --color-t-brinquedo-soft: var(--t-brinquedo-soft);
   --font-sans: var(--font-app);
   --font-serif: var(--font-titulo);
   --shadow-card: var(--shadow-card);
@@ -162,10 +178,13 @@ body {
     visibility: hidden;
   }
   #cartao-impressao,
-  #cartao-impressao * {
+  #cartao-impressao *,
+  #historico-impressao,
+  #historico-impressao * {
     visibility: visible;
   }
-  #cartao-impressao {
+  #cartao-impressao,
+  #historico-impressao {
     position: absolute;
     inset: 0;
     display: block !important;

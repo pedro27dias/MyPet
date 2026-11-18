@@ -1,9 +1,10 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Wallet } from "lucide-react";
+import { Microscope, Wallet } from "lucide-react";
+import { MedicalFormSheet, newMedical } from "../prontuario/medical-form";
 import { useState } from "react";
-import type { Care, CareType } from "@/lib/types";
+import type { Care, CareType, MedicalRecord } from "@/lib/types";
 import { useApp } from "../app-provider";
 import { Sheet } from "../ui/sheet";
 import { ExpenseSheet } from "../gastos/expense-form";
@@ -15,6 +16,8 @@ const OPTIONS: { type: CareType; label: string }[] = [
   { type: "vacina", label: "Vacina" },
   { type: "vermifugo", label: "Vermífugo" },
   { type: "antipulgas", label: "Antipulgas" },
+  { type: "coleira", label: "Coleira" },
+  { type: "banho", label: "Banho e tosa" },
   { type: "consulta", label: "Consulta, cirurgia ou exame" },
   { type: "outro", label: "Lembrete livre" },
 ];
@@ -24,6 +27,7 @@ export function AddMenu({ open, onClose }: { open: boolean; onClose: () => void 
   const { pet } = useApp();
   const [draft, setDraft] = useState<Care | null>(null);
   const [expenseOpen, setExpenseOpen] = useState(false);
+  const [medical, setMedical] = useState<MedicalRecord | null>(null);
 
   return (
     <>
@@ -43,7 +47,7 @@ export function AddMenu({ open, onClose }: { open: boolean; onClose: () => void 
                   onClose();
                   setDraft(newCareFor(pet.id, o.type, pet.species));
                 }}
-                className={`flex min-h-28 flex-col items-start justify-between rounded-3xl p-4 text-left active:scale-[0.97] ${m.bg}`}
+                className={`flex min-h-24 flex-col items-start justify-between rounded-3xl p-4 text-left active:scale-[0.97] ${m.bg}`}
               >
                 <m.Icon size={30} className={m.fg} strokeWidth={2.2} />
                 <span className="font-extrabold leading-tight">{o.label}</span>
@@ -55,6 +59,22 @@ export function AddMenu({ open, onClose }: { open: boolean; onClose: () => void 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.03 * OPTIONS.length }}
+            onClick={() => {
+              if (!pet) return;
+              onClose();
+              setMedical(newMedical(pet.id));
+            }}
+            className="col-span-2 flex items-center gap-3 rounded-3xl bg-pink-soft p-4 text-left active:scale-[0.98]"
+          >
+            <Microscope size={26} className="text-pink-strong" />
+            <span className="font-extrabold text-forest">Registro clínico / exame</span>
+            <span className="ml-auto text-sm text-muted">prontuário</span>
+          </motion.button>
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.03 * (OPTIONS.length + 1) }}
             onClick={() => {
               if (!pet) return;
               onClose();
@@ -70,6 +90,7 @@ export function AddMenu({ open, onClose }: { open: boolean; onClose: () => void 
       </Sheet>
       <CareFormSheet care={draft} open={!!draft} onClose={() => setDraft(null)} />
       <ExpenseSheet open={expenseOpen} onClose={() => setExpenseOpen(false)} />
+      <MedicalFormSheet record={medical} onClose={() => setMedical(null)} />
     </>
   );
 }

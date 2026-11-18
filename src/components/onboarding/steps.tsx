@@ -65,6 +65,12 @@ const S: Record<string, StepDef> = {
   },
   racao: { key: "racao", title: (a) => (isCat(a) ? `O que ${oPet(a)} come?` : `Qual ração ${oPet(a)} come?`), hint: "Opcional.", Body: FoodStep },
   vet: { key: "vet", title: () => "Tem um veterinário de confiança?", hint: "Opcional. Fica à mão quando precisar.", Body: VetStep },
+  plano: {
+    key: "plano",
+    title: (a) => `${a.name.trim() || "Seu pet"} tem plano de saúde?`,
+    hint: "Opcional. Dá para completar e guardar o PDF depois, no perfil do pet.",
+    Body: PlanStep,
+  },
   convite: {
     key: "convite",
     title: (a) => `Mais alguém cuida ${a.name.trim() ? `${fem(a, "do", "da")} ${a.name.trim()}` : "dele"}?`,
@@ -73,10 +79,10 @@ const S: Record<string, StepDef> = {
   },
 };
 
-const DOG_KEYS = ["nome", "raca", "sexo", "idade", "porte", "origem", "castrado", "doenca", "alergia", "remedio", "vacinas", "vermifugo", "pulgas", "racao", "vet", "convite"];
-const CAT_KEYS = ["nome", "raca", "sexo", "idade", "origem", "castrado", "estilo", "outros", "felv", "doenca", "alergia", "remedio", "vacinas", "vermifugo", "pulgas", "racao", "vet", "convite"];
+const DOG_KEYS = ["nome", "raca", "sexo", "idade", "porte", "origem", "castrado", "doenca", "alergia", "remedio", "vacinas", "vermifugo", "pulgas", "racao", "vet", "convite", "plano"];
+const CAT_KEYS = ["nome", "raca", "sexo", "idade", "origem", "castrado", "estilo", "outros", "felv", "doenca", "alergia", "remedio", "vacinas", "vermifugo", "pulgas", "racao", "vet", "convite", "plano"];
 
-/** "Seu pet é…" + as perguntas da espécie (16 de cachorro, 18 de gato). */
+/** "Seu pet é…" + as perguntas da espécie (16 de cachorro, 18 de gato) + plano de saúde (opcional). */
 export function stepsFor(species: Species | null): StepDef[] {
   return [SPECIES_STEP, ...(species === "gato" ? CAT_KEYS : DOG_KEYS).map((k) => S[k])];
 }
@@ -635,6 +641,24 @@ function VetStep({ a, set }: StepProps) {
         onChange={(v) => set({ vet: { ...a.vet, phone: v } })}
         placeholder="(11) 99999-9999"
       />
+    </div>
+  );
+}
+
+function PlanStep({ a, set, next }: StepProps) {
+  const p = a.plan;
+  const setPlan = (patch: Partial<Answers["plan"]>) => set({ plan: { ...p, ...patch } });
+  return (
+    <div className="space-y-4">
+      <YesNo value={p.has} onChange={(v) => (setPlan({ has: v }), !v && next())} />
+      {p.has && (
+        <div className="space-y-4 rounded-3xl bg-card p-4 shadow-card">
+          <TextField label="Operadora" value={p.operator} onChange={(v) => setPlan({ operator: v })} placeholder="Nome da empresa" />
+          <TextField label="Nome do plano" value={p.name} onChange={(v) => setPlan({ name: v })} />
+          <TextField label="Número da carteirinha" value={p.card} onChange={(v) => setPlan({ card: v })} />
+          <TextField label="Telefone da central" type="tel" inputMode="tel" value={p.phone} onChange={(v) => setPlan({ phone: v })} />
+        </div>
+      )}
     </div>
   );
 }

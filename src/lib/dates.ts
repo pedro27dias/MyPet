@@ -142,3 +142,27 @@ export function greeting(d = new Date()): string {
   if (h < 18) return "Boa tarde";
   return "Boa noite";
 }
+
+const MONTHS_LONG = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+
+/** "17 de fevereiro de 2027 (quarta)" */
+export function fmtLongDate(d: Date | string): string {
+  const x = typeof d === "string" ? (d.length === 10 ? parseDate(d) : new Date(d)) : d;
+  return `${x.getDate()} de ${MONTHS_LONG[x.getMonth()]} de ${x.getFullYear()} (${weekdayLong(x)})`;
+}
+
+/** "Novembro 2026" */
+export function monthLabel(d: Date): string {
+  const m = MONTHS_LONG[d.getMonth()];
+  return `${m.charAt(0).toUpperCase()}${m.slice(1)} ${d.getFullYear()}`;
+}
+
+export type PeriodUnit = "dias" | "semanas" | "meses" | "anos";
+
+/** Data + N dias/semanas/meses/anos. */
+export function addPeriod(d: Date, n: number, unit: PeriodUnit): Date {
+  if (unit === "dias") return addDays(d, n);
+  if (unit === "semanas") return addDays(d, 7 * n);
+  if (unit === "meses") return addMonths(d, n);
+  return addMonths(d, 12 * n);
+}

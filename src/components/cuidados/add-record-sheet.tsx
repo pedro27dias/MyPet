@@ -13,6 +13,7 @@ import { FleaSafetyNote } from "../care/flea-safety";
 import { newCareFor } from "../care/care-form";
 import { Button } from "../ui/button";
 import { Pills, TextField } from "../ui/fields";
+import { DateInput } from "../ui/date-input";
 import { Sheet } from "../ui/sheet";
 import { useToast } from "../ui/toast";
 
@@ -187,10 +188,8 @@ function Form({ pet, section, onDone }: { pet: Pet; section?: CardSection; onDon
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
-        <TextField label={test ? "Feito em" : "Aplicada em"} type="date" value={applied} max={todayStr()} onChange={changeApplied} />
-        <TextField label={test ? "Repetir em (opcional)" : "Próxima dose"} type="date" value={next} onChange={setNext} />
-      </div>
+      <TextField label={test ? "Feito em" : "Aplicada em"} type="date" value={applied} max={todayStr()} onChange={changeApplied} />
+      <DateInput label={test ? "Repetir em (opcional)" : "Próxima dose"} optional={test} base={applied} value={next} onChange={setNext} />
       <TextField label="Clínica / veterinário" value={clinic} onChange={setClinic} placeholder="Ex.: Clínica Patas" />
 
       <div>

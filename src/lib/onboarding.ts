@@ -72,6 +72,8 @@ export interface Answers {
   lifestyle: Lifestyle | null;
   otherAnimals: OtherAnimal[];
   felv: { test: FelvTest | null; date: string };
+  /** Plano de saúde (pergunta opcional no fim) */
+  plan: { has: boolean | null; operator: string; name: string; card: string; phone: string };
   vet: { name: string; phone: string };
   inviteTutor: boolean | null;
 }
@@ -115,6 +117,7 @@ export function emptyAnswers(): Answers {
     lifestyle: null,
     otherAnimals: [],
     felv: { test: null, date: "" },
+    plan: { has: null, operator: "", name: "", card: "", phone: "" },
   };
 }
 
@@ -270,8 +273,9 @@ export function suggestCares(a: Answers, petId: string): Suggestion[] {
     const last = a.flea.last ? parseDate(a.flea.last) : null;
     const date = last ? addMonths(last, months) : addDays(today, 3);
     const { date: d, late } = notBefore(date, today);
-    const title = a.flea.method === "coleira" ? "Trocar coleira antipulgas" : a.flea.method === "comprimido" ? "Comprimido antipulgas" : "Pipeta antipulgas";
-    const care = datedCare(petId, "antipulgas", title, "meses", months, d);
+    const title = a.flea.method === "coleira" ? "Coleira" : a.flea.method === "comprimido" ? "Comprimido antipulgas" : "Pipeta antipulgas";
+    const care = datedCare(petId, a.flea.method === "coleira" ? "coleira" : "antipulgas", title, "meses", months, d);
+    if (a.flea.method === "coleira") Object.assign(care, { protects: ["pulgas", "carrapatos"], notifyBeforeMin: 7 * 1440 });
     out.push({
       care,
       reason: `${late ? "Já venceu. " : ""}${months === 1 ? "Todo mês" : `A cada ${months} meses`}: confira na embalagem quanto tempo protege.`,
@@ -445,8 +449,9 @@ function suggestCatCares(a: Answers, petId: string): Suggestion[] {
     const last = a.flea.last ? parseDate(a.flea.last) : null;
     const date = last ? addMonths(last, months) : addDays(today, 3);
     const { date: d, late } = notBefore(date, today);
-    const title = a.flea.method === "coleira" ? "Trocar coleira antipulgas" : a.flea.method === "comprimido" ? "Comprimido antipulgas" : "Pipeta antipulgas";
-    const care = datedCare(petId, "antipulgas", title, "meses", months, d);
+    const title = a.flea.method === "coleira" ? "Coleira" : a.flea.method === "comprimido" ? "Comprimido antipulgas" : "Pipeta antipulgas";
+    const care = datedCare(petId, a.flea.method === "coleira" ? "coleira" : "antipulgas", title, "meses", months, d);
+    if (a.flea.method === "coleira") Object.assign(care, { protects: ["pulgas"], notifyBeforeMin: 7 * 1440 });
     care.note = FLEA_CAT_NOTE;
     push(care, `${months === 1 ? "Todo mês" : `A cada ${months} meses`}: confira na embalagem. ${FLEA_CAT_NOTE}`, late, a.flea.last || null);
   } else if (a.flea.method === "nenhuma") {

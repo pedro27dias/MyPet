@@ -92,7 +92,7 @@ export async function POST(request: Request) {
     }
     // Antes (consultas com "lembrar 1 dia / 2 horas antes")
     const withNotice = cares.filter((c) => c.notifyBeforeMin);
-    for (const o of occurrencesBetween(withNotice, records, wallNow, new Date(w + 3 * 24 * 60 * MIN), wallNow)) {
+    for (const o of occurrencesBetween(withNotice, records, wallNow, new Date(w + 8 * 24 * 60 * MIN), wallNow)) {
       const m = new Date(o.due.getTime() - (o.care.notifyBeforeMin ?? 0) * MIN);
       if (open(o) && m.getTime() > w - LOOKBACK && m.getTime() <= w + AHEAD) jobs.push({ occ: o, tipo: "antes", momento: m });
     }
@@ -114,9 +114,14 @@ export async function POST(request: Request) {
       const pet = petName.get(c.petId) ?? "Seu pet";
       const at = hourText(fromWall(j.occ.due, shift));
       let body: string;
-      if (j.tipo === "antes") {
+      if (j.tipo === "antes" && c.type === "coleira") {
+        const days = Math.round((c.notifyBeforeMin ?? 0) / 1440);
+        body = `Troca da coleira em ${days} ${days === 1 ? "dia" : "dias"}.`;
+      } else if (j.tipo === "antes") {
         const daysAhead = (c.notifyBeforeMin ?? 0) >= 1440;
         body = `${daysAhead ? "Amanhã" : "Hoje"} às ${at}${c.detail ? ` · ${c.detail}` : ""}`;
+      } else if (c.type === "coleira") {
+        body = "Dia de trocar a coleira. Toque para marcar como trocada.";
       } else if (c.type === "remedio") {
         body = `Hora do remédio${c.detail ? ` (${c.detail})` : ""}. Toque para marcar como feito.`;
       } else if (c.type === "consulta") {

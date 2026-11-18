@@ -87,6 +87,17 @@ export function OnboardingFlow() {
           photoFailed = true;
         }
       }
+      // Plano de saúde (pergunta opcional do fim)
+      if (a.plan.has && (a.plan.operator.trim() || a.plan.name.trim() || a.plan.card.trim() || a.plan.phone.trim())) {
+        const clean = (s: string) => s.trim() || null;
+        try {
+          await repo.updatePet(petId, {
+            plan: { operator: clean(a.plan.operator), name: clean(a.plan.name), card: clean(a.plan.card), phone: clean(a.plan.phone), validUntil: null, waiting: null, coverage: null, notes: null, pdf: null },
+          });
+        } catch {
+          /* o plano pode ser cadastrado depois, no perfil */
+        }
+      }
       let invite: string | null = null;
       if (a.inviteTutor) {
         try {

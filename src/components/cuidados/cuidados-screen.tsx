@@ -14,16 +14,26 @@ import { TabShell } from "../shell/tab-shell";
 import { Button } from "../ui/button";
 import { Sheet } from "../ui/sheet";
 import { VaccineCard } from "./vaccine-card";
+import { HistoryTimeline } from "./history-timeline";
+import { ProntuarioTab } from "../prontuario/prontuario-tab";
+import { CollarCard } from "../coleira/collar-card";
 
-const ORDER: CareType[] = ["remedio", "vacina", "vermifugo", "antipulgas", "consulta", "exame", "outro"];
+const ORDER: CareType[] = ["remedio", "vacina", "vermifugo", "antipulgas", "coleira", "banho", "consulta", "exame", "outro"];
 
-/** Aba Cuidados: Cartão de Vacina no topo + todos os lembretes agrupados por tipo. */
+const VIEWS = [
+  { key: "proximos", label: "Próximos" },
+  { key: "historico", label: "Histórico" },
+  { key: "prontuario", label: "Prontuário" },
+] as const;
+
+/** Aba Cuidados: Próximos (Cartão de Vacina, coleiras e lembretes) | Histórico (linha do tempo) | Prontuário (registros clínicos). */
 export function CuidadosScreen() {
   const { pet, cares, records, repo, dataReady } = useApp();
   const [all, setAll] = useState<CareRecord[] | null>(null);
   const [detail, setDetail] = useState<Care | null>(null);
   const [editing, setEditing] = useState<Care | null>(null);
   const [now] = useState(() => Date.now());
+  const [view, setView] = useState<(typeof VIEWS)[number]["key"]>("proximos");
 
   // Histórico completo (o Início só carrega as últimas semanas). Recarrega quando algo muda.
   useEffect(() => {
@@ -43,7 +53,8 @@ export function CuidadosScreen() {
       ORDER.map((type) => ({
         type,
         list: cares
-          .filter((c) => c.type === type)
+          // coleiras ativas têm cards próprios (com o anel); as paradas ficam na lista
+          .filter((c) => c.type === type && !(type === "coleira" && c.active))
           .sort((a, b) => Number(b.active) - Number(a.active) || a.title.localeCompare(b.title)),
       })).filter((g) => g.list.length),
     [cares],
@@ -51,10 +62,52 @@ export function CuidadosScreen() {
 
   if (!pet) return null;
   const history = all ?? records;
+  const collars = cares.filter((c) => c.type === "coleira" && c.active);
 
   return (
     <TabShell title={<h1 className="titulo pb-5 pt-6 text-4xl">Cuidados</h1>}>
+      <div className="mb-5 grid grid-cols-3 gap-1 rounded-full bg-card p-1 shadow-card" role="tablist" aria-label="Ver">
+        {VIEWS.map((v) => {
+          const sel = v.key === view;
+          return (
+            <button key={v.key} type="button" role="tab" aria-selected={sel} onClick={() => setView(v.key)} className="relative h-11 rounded-full text-sm font-bold">
+              {sel && <motion.span layoutId="cuidados-vista" className="absolute inset-0 rounded-full bg-forest" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+              <span className={`relative ${sel ? "text-pink" : "text-forest"}`}>{v.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {view === "prontuario" ? (
+        <motion.div key="prontuario" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          <ProntuarioTab pet={pet} />
+        </motion.div>
+      ) : view === "historico" ? (
+        <motion.div key="historico" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+          {all ? (
+            <HistoryTimeline pet={pet} cares={cares} records={all} />
+          ) : (
+            <div className="space-y-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-20 animate-pulse rounded-3xl bg-card" />
+              ))}
+            </div>
+          )}
+        </motion.div>
+      ) : (
+        <motion.div key="proximos" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
       <VaccineCard pet={pet} cares={cares} records={history} />
+
+      {collars.length > 0 && (
+        <section className="mt-8">
+          <h2 className="titulo mb-3 px-1 text-2xl">Coleiras</h2>
+          <div className="space-y-3">
+            {collars.map((c) => (
+              <CollarCard key={c.id} care={c} records={history} onOpen={() => setDetail(c)} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {!dataReady ? (
         <div className="mt-8 space-y-3">
@@ -62,7 +115,7 @@ export function CuidadosScreen() {
             <div key={i} className="h-20 animate-pulse rounded-3xl bg-card" />
           ))}
         </div>
-      ) : groups.length === 0 ? (
+      ) : groups.length === 0 && !collars.length ? (
         <p className="mt-8 rounded-3xl bg-card p-5 text-center text-muted shadow-card">
           Nenhum lembrete ainda. Toque no <b className="text-forest">+</b> para adicionar.
         </p>
@@ -86,6 +139,8 @@ export function CuidadosScreen() {
             </section>
           ))}
         </div>
+      )}
+        </motion.div>
       )}
 
       <Sheet
