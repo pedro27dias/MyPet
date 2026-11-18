@@ -166,7 +166,6 @@ function CareForm({ initial, onDone }: { initial: Care; onDone: () => void }) {
           value={c.title}
           onChange={(v) => set({ title: v })}
           placeholder={med ? "Ex.: Apoquel" : c.type === "outro" ? "Ex.: Cortar as unhas" : bath ? "Ex.: Hidratação" : ""}
-          autoFocus={isNew && !c.title}
         />
       )}
       {c.type === "antipulgas" && <FleaSafetyNote species={species} />}

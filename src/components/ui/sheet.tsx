@@ -42,7 +42,9 @@ export function Sheet({
           <motion.div
             role="dialog"
             aria-modal="true"
-            className="pb-safe relative max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-[28px] bg-card px-5 pt-3 shadow-float sm:rounded-[28px] sm:pb-5"
+            // sobe junto com o teclado (--teclado vem do KeyboardHelper)
+            style={{ marginBottom: "var(--teclado, 0px)", maxHeight: "calc(90dvh - var(--teclado, 0px))" }}
+            className="pb-safe relative w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[28px] bg-card px-5 pt-3 shadow-float sm:rounded-[28px] sm:pb-5"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}

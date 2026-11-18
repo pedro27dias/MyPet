@@ -1,7 +1,6 @@
 "use client";
 
-import { ArrowLeft, Camera, LogOut, Pencil, Phone, Plus, UserPlus } from "lucide-react";
-import Link from "next/link";
+import { Camera, LogOut, Pencil, Phone, Plus, UserPlus } from "lucide-react";
 import { HealthPlanCard } from "./health-plan";
 import { EmergencyCard } from "../emergencia/emergency";
 import { useRouter } from "next/navigation";
@@ -106,10 +105,7 @@ export function PetScreen() {
 
   return (
     <TabShell>
-      <Link href="/" aria-label="Voltar ao Início" className="mt-3 grid size-11 place-items-center rounded-full bg-card shadow-card">
-        <ArrowLeft size={20} />
-      </Link>
-      <div className="-mt-6 flex flex-col items-center text-center">
+      <div className="mt-4 flex flex-col items-center text-center">
         <button type="button" onClick={() => fileRef.current?.click()} className="relative" aria-label="Trocar foto" disabled={photoBusy}>
           <PetAvatar url={pet.photoUrl} species={pet.species} size={112} ring />
           <span className="absolute bottom-0 right-0 grid size-9 place-items-center rounded-full bg-forest text-pink ring-4 ring-bg">
@@ -153,18 +149,9 @@ export function PetScreen() {
               <Button variant="soft" size="lg" className="mt-3 w-full" onClick={() => setEditing(true)}>
                 <Pencil size={18} /> Editar perfil
               </Button>
-              <div className="mt-6">
-                <NotificationsSetting />
-              </div>
-              <div className="mt-8 space-y-2">
-                <Button variant="outline" className="w-full" onClick={() => router.push("/novo-pet")}>
-                  <Plus size={18} /> Adicionar outro pet
-                </Button>
-                <Button variant="ghost" className="w-full" onClick={signOut}>
-                  <LogOut size={18} /> {repo.mode === "demo" ? "Sair do modo demonstração" : "Sair da conta"}
-                </Button>
-                {repo.mode === "demo" && <p className="text-center text-xs text-faint">Modo demonstração: os dados ficam só neste aparelho.</p>}
-              </div>
+              <Button variant="outline" className="mt-3 w-full" onClick={() => router.push("/novo-pet")}>
+                <Plus size={18} /> Adicionar outro pet
+              </Button>
             </>
           )}
 
@@ -194,6 +181,24 @@ export function PetScreen() {
           )}
         </motion.div>
       </AnimatePresence>
+
+      {/* Minha conta (sempre no fim do perfil) */}
+      <section className="mt-10">
+        <h2 className="titulo mb-3 px-1 text-2xl">Minha conta</h2>
+        <div className="flex items-center gap-3 rounded-3xl bg-card p-4 shadow-card">
+          <span className="grid size-12 shrink-0 place-items-center rounded-full bg-peach-soft text-lg font-extrabold text-forest">{(user.name || "?").charAt(0).toUpperCase()}</span>
+          <span className="min-w-0">
+            <span className="block truncate font-bold text-forest">{user.name}</span>
+            <span className="block truncate text-sm text-muted">{repo.mode === "demo" ? "Modo demonstração: dados só neste aparelho" : (user.email ?? "")}</span>
+          </span>
+        </div>
+        <div className="mt-3">
+          <NotificationsSetting />
+        </div>
+        <Button variant="ghost" className="mt-3 w-full" onClick={signOut}>
+          <LogOut size={18} /> {repo.mode === "demo" ? "Sair do modo demonstração" : "Sair da conta"}
+        </Button>
+      </section>
 
       <EditPetSheet open={editing} onClose={() => setEditing(false)} pet={pet} />
 

@@ -244,7 +244,6 @@ function NameStep({ a, set }: StepProps) {
         value={a.name}
         onChange={(v) => set({ name: v })}
         placeholder="Ex.: Mel, Thor, Paçoca"
-        autoFocus
         maxLength={40}
         className="[&_input]:h-16 [&_input]:text-center [&_input]:text-2xl [&_input]:font-extrabold"
       />

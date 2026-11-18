@@ -102,10 +102,7 @@ export function HomeScreen() {
                       : "Tudo em dia por aqui"}
               </p>
             </div>
-            <Link href="/pet" aria-label={`Perfil de ${pet.name}`} className="relative shrink-0 active:scale-95">
-              <PetAvatar url={pet.photoUrl} species={pet.species} size={72} ring />
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-forest px-2 py-0.5 text-[10px] font-bold text-pink shadow-card">Perfil</span>
-            </Link>
+            <PetAvatar url={pet.photoUrl} species={pet.species} size={72} ring />
           </div>
         </header>
       }

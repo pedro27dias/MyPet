@@ -189,7 +189,7 @@ export function CollarForm({ initial, onDone }: { initial: Care; onDone: () => v
         <Pills options={[...brands.map((b) => ({ value: b.name, label: b.name })), { value: OUTRA, label: "Outra" }]} value={brandChoice} onChange={chooseBrand} />
         {brandChoice === OUTRA && (
           <div className="mt-3">
-            <TextField value={otherBrand} onChange={setOtherBrand} placeholder="Nome da coleira ou princípio ativo" autoFocus={isNew} />
+            <TextField value={otherBrand} onChange={setOtherBrand} placeholder="Nome da coleira ou princípio ativo" />
           </div>
         )}
       </Field>

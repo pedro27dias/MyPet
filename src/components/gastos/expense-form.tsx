@@ -145,7 +145,7 @@ function ExpenseForm({ expense, preset, onDone }: { expense: Expense | null; pre
         <span className="block text-sm font-bold text-muted">Valor</span>
         <input
           inputMode="numeric"
-          autoFocus={!expense && !preset}
+         
           aria-label="Valor em reais"
           value={fmtMoney(cents / 100)}
           onChange={(e) => {
@@ -192,7 +192,7 @@ function ExpenseForm({ expense, preset, onDone }: { expense: Expense | null; pre
         {creating && (
           <div className="mt-3 flex gap-2">
             <div className="flex-1">
-              <TextField value={newCat} onChange={setNewCat} placeholder="Ex.: Creche, Adestramento" autoFocus maxLength={24} />
+              <TextField value={newCat} onChange={setNewCat} placeholder="Ex.: Creche, Adestramento" maxLength={24} />
             </div>
             <Button onClick={addCategory} disabled={!newCat.trim()}>
               Criar

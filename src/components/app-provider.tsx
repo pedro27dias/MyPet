@@ -7,6 +7,7 @@ import { registerServiceWorker } from "@/lib/push";
 import type { AppUser, Care, CareRecord, Pet, Tutor } from "@/lib/types";
 import { addDays, startOfWeek } from "@/lib/dates";
 import { ToastProvider } from "./ui/toast";
+import { KeyboardHelper } from "./shell/keyboard";
 import { LoginScreen } from "./auth/login-screen";
 import { Splash } from "./shell/splash";
 import { Welcome } from "./shell/welcome";
@@ -52,6 +53,7 @@ function recordsSince() {
 export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <ToastProvider>
+      <KeyboardHelper />
       <Gate>{children}</Gate>
     </ToastProvider>
   );
