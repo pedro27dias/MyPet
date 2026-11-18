@@ -15,6 +15,7 @@ import { Pills, TextField } from "../ui/fields";
 import { Sheet } from "../ui/sheet";
 import { useToast } from "../ui/toast";
 import { MEDICAL_META, MEDICAL_ORDER, MedicalIcon } from "./medical-meta";
+import { CampoData, CampoHora } from "../ui/campo-data";
 
 const MAX_PDF = 10 * 1024 * 1024;
 
@@ -179,8 +180,8 @@ function MedicalForm({ initial, onDone }: { initial: MedicalRecord; onDone: (nex
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <TextField label="Data" type="date" value={m.date} max={todayStr()} onChange={(v) => v && set({ date: v })} />
+      <div className="campos-2">
+        <CampoData label="Data" value={m.date} max={todayStr()} onChange={(v) => v && set({ date: v })} />
         <TextField
           label="Valor (opcional)"
           inputMode="numeric"
@@ -387,13 +388,13 @@ function PrescriptionForm({ onDone }: { onDone: () => void }) {
               </button>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="campos-2">
             <TextField label="Nome" value={r.name} onChange={(v) => setRow(r.id, { name: v })} placeholder="Ex.: Amoxicilina" />
             <TextField label="Dose" value={r.dose} onChange={(v) => setRow(r.id, { dose: v })} placeholder="Ex.: 1 comp." />
           </div>
           <Pills options={EVERY} value={r.every} onChange={(v) => setRow(r.id, { every: v })} />
-          <div className="grid grid-cols-2 gap-2">
-            <TextField label="Primeira dose" type="time" value={r.first} onChange={(v) => v && setRow(r.id, { first: v })} />
+          <div className="campos-2">
+            <CampoHora label="Primeira dose" value={r.first} onChange={(v) => setRow(r.id, { first: v })} />
             <TextField label="Por quantos dias" inputMode="numeric" value={r.days} onChange={(v) => setRow(r.id, { days: v.replace(/\D/g, "") })} placeholder="vazio = contínuo" />
           </div>
         </div>

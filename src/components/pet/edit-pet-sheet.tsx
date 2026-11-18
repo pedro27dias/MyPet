@@ -9,6 +9,7 @@ import { Button } from "../ui/button";
 import { Pills, Stepper, TextField } from "../ui/fields";
 import { Sheet } from "../ui/sheet";
 import { useToast } from "../ui/toast";
+import { CampoData } from "../ui/campo-data";
 
 const SIZES: { value: Size; label: string }[] = [
   { value: "pequeno", label: "Pequeno" },
@@ -198,7 +199,7 @@ function EditForm({ pet, onDone }: { pet: Pet; onDone: () => void }) {
           />
           <div className="mt-3">
             {birthMode === "data" ? (
-              <TextField type="date" value={birth} max={todayStr()} onChange={setBirth} />
+              <CampoData value={birth} max={todayStr()} optional emptyText="Escolher a data" onChange={setBirth} />
             ) : (
               <div className="grid grid-cols-2 gap-3">
                 <Stepper label={years === 1 ? "ano" : "anos"} value={years} max={25} onChange={(v) => (setYears(v), setAgeTouched(true))} />
@@ -273,7 +274,7 @@ function EditForm({ pet, onDone }: { pet: Pet; onDone: () => void }) {
             <Pills options={FOOD_TYPES} value={foodType} onChange={setFoodType} />
           </Field>
         )}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="campos-2">
           <TextField label="Ração" value={foodBrand} onChange={setFoodBrand} placeholder="Marca" />
           <TextField label="Por dia" value={foodAmount} onChange={setFoodAmount} placeholder={cat ? "Ex.: 60 g" : "Ex.: 200 g"} />
         </div>

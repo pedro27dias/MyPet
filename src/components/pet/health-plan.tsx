@@ -9,6 +9,7 @@ import { Button } from "../ui/button";
 import { TextField } from "../ui/fields";
 import { Sheet } from "../ui/sheet";
 import { useToast } from "../ui/toast";
+import { CampoData } from "../ui/campo-data";
 
 export const EMPTY_PLAN: HealthPlan = {
   operator: null,
@@ -160,7 +161,10 @@ function PlanForm({ pet, onDone }: { pet: Pet; onDone: () => void }) {
 
   return (
     <div className="space-y-4 pb-2">
-      {FIELDS.map((f) => (
+      {FIELDS.map((f) =>
+        f.type === "date" ? (
+          <CampoData key={f.key} label={f.label} value={plan[f.key] ?? ""} optional emptyText="Sem validade" onChange={(v) => set(f.key, v)} />
+        ) : (
         <TextField
           key={f.key}
           label={f.label}
@@ -171,7 +175,8 @@ function PlanForm({ pet, onDone }: { pet: Pet; onDone: () => void }) {
           placeholder={f.placeholder}
           inputMode={f.type === "tel" ? "tel" : undefined}
         />
-      ))}
+        ),
+      )}
 
       <button
         type="button"

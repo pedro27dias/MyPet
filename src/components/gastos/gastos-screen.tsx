@@ -10,9 +10,9 @@ import type { Expense, ExpenseCategory } from "@/lib/types";
 import { useApp } from "../app-provider";
 import { TabShell } from "../shell/tab-shell";
 import { Button } from "../ui/button";
-import { TextField } from "../ui/fields";
 import { ExpenseSheet } from "./expense-form";
 import { expenseMeta, ExpenseIcon } from "./expense-meta";
+import { CampoData } from "../ui/campo-data";
 
 function firstOfMonth(d = new Date()) {
   return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -175,9 +175,9 @@ export function GastosScreen() {
                 </Chip>
               </FilterRow>
               {custom && (
-                <div className="grid grid-cols-2 gap-3">
-                  <TextField label="De" type="date" value={custom.from} max={custom.to} onChange={(v) => v && setCustom({ ...custom, from: v })} />
-                  <TextField label="Até" type="date" value={custom.to} max={todayStr()} onChange={(v) => v && setCustom({ ...custom, to: v })} />
+                <div className="campos-2">
+                  <CampoData label="De" value={custom.from} max={custom.to} onChange={(v) => v && setCustom({ ...custom, from: v })} />
+                  <CampoData label="Até" value={custom.to} min={custom.from} max={todayStr()} onChange={(v) => v && setCustom({ ...custom, to: v })} />
                 </div>
               )}
               <FilterRow label="Categoria">

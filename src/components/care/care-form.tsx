@@ -17,7 +17,8 @@ import { CARE_META, CareIcon } from "./care-meta";
 import { FleaSafetyNote } from "./flea-safety";
 import { CollarForm } from "../coleira/collar-form";
 import { activeFleaCollars, OVERLAP_TEXT } from "@/lib/collar";
-import { DateInput, RepeatPicker } from "../ui/date-input";
+import { RepeatPicker } from "../ui/date-input";
+import { CampoData } from "../ui/campo-data";
 import { TriangleAlert } from "lucide-react";
 
 /*
@@ -184,7 +185,7 @@ function CareForm({ initial, onDone }: { initial: Care; onDone: () => void }) {
         />
       )}
       {bath && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="campos-2">
           <TextField label="Telefone do local" type="tel" inputMode="tel" value={c.phone ?? ""} onChange={(v) => set({ phone: v || null })} placeholder="(11) 99999-9999" />
           <TextField
             label="Valor (opcional)"
@@ -227,16 +228,11 @@ function CareForm({ initial, onDone }: { initial: Care; onDone: () => void }) {
                   onChange={(t) => set({ times: c.freq === "horas" ? t.slice(0, 1) : t })}
                 />
               </div>
-              <DateInput label="Começa em" value={c.start} onChange={(v) => set({ start: v })} />
-              <DateInput label="Termina em" kind="por" optional base={c.start} value={c.end ?? ""} onChange={(v) => set({ end: v || null })} />
-              <p className="-mt-2 px-1 text-sm text-muted">
-                Sem data de fim = uso contínuo.
-                {c.end && (
-                  <button type="button" onClick={() => set({ end: null })} className="ml-2 font-bold text-olive underline">
-                    Tirar data de fim
-                  </button>
-                )}
-              </p>
+              <div className="campos-2">
+                <CampoData label="Começa em" ahead value={c.start} onChange={(v) => v && set({ start: v })} />
+                <CampoData label="Termina em" kind="por" optional emptyText="Contínuo" base={c.start} value={c.end ?? ""} onChange={(v) => set({ end: v || null })} />
+              </div>
+              <p className="-mt-2 px-1 text-sm text-muted">Sem data de fim = uso contínuo.</p>
             </>
           ) : (
             <DateTime date={date} time={time} onDate={setDate} onTime={setTime} />
@@ -298,11 +294,6 @@ function DateTime({
   label?: string;
 }) {
   return (
-    <div className="space-y-3">
-      <DateInput label={label} value={date} onChange={(v) => v && onDate(v)} />
-      <div className="w-36">
-        <TextField label="Hora" type="time" value={time} onChange={(v) => v && onTime(v)} />
-      </div>
-    </div>
+    <CampoData label={label} ahead value={date} time={time} onTimeChange={onTime} onChange={(v) => v && onDate(v)} />
   );
 }

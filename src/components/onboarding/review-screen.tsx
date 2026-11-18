@@ -11,6 +11,7 @@ import { CareIcon } from "../care/care-meta";
 import { PetAvatar } from "../shared/pet-avatar";
 import { Button } from "../ui/button";
 import { TextField } from "../ui/fields";
+import { CampoData } from "../ui/campo-data";
 
 const SIZE_LABEL = { pequeno: "Pequeno", medio: "Médio", grande: "Grande", gigante: "Gigante" };
 const LIFESTYLE_LABEL = { dentro: "Só dentro de casa", as_vezes: "Sai às vezes", sempre: "Sai sempre" };
@@ -137,12 +138,7 @@ function SuggestionCard({ s, index, onChange }: { s: Suggestion; index: number; 
         <div className="mt-3 space-y-3 border-t-2 border-line pt-3">
           <TextField label="Nome" value={c.title} onChange={(v) => setCare({ title: v })} />
           {!anchored && (
-            <TextField
-              label="Data"
-              type="date"
-              value={date}
-              onChange={(v) => v && setCare({ nextAt: atTime(v, c.times[0] ?? "09:00").toISOString() })}
-            />
+            <CampoData label="Data" value={date} ahead onChange={(v) => v && setCare({ nextAt: atTime(v, c.times[0] ?? "09:00").toISOString() })} />
           )}
           {(c.freq === "meses" || c.freq === "anos") && (
             <label className="block">

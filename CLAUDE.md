@@ -101,6 +101,8 @@ No PowerShell deste Windows use `npm.cmd`/`npx.cmd`.
 - Barra de navegação: `components/shell/tab-nav.tsx`, no layout `app/(abas)/layout.tsx` (fica fixa entre as abas). Pílula verde flutuante, ícones rosa, bolha rosa que desliza para a aba ativa, botão + rosa no meio (gira ao abrir).
 - Animações com `motion` (curtas): troca de tela, perguntas deslizando, check que se desenha (`AnimatedCheck`), cartão de vacina. "Reduzir movimento" desliga.
 - Testar sempre em 375 px sem rolagem lateral.
+- **Datas e horas**: NUNCA usar `<input type="date">`/`"time"` visível (no iPhone ignora a largura e a fonte). Usar `CampoData` (pílula 📅 "Hoje"/"18 nov"/"18 nov 26", com `time` vira "Hoje · 08:30"; painel com atalhos, "Daqui a…" (`ahead`), "Por…" (`kind="por"`), calendário e horário) e `CampoHora` em `components/ui/campo-data.tsx`. O painel vai por portal no `<body>` (z-90), por cima de outras janelas.
+- **Campos**: todos com 52 px (`h-13`), borda 2, `rounded-2xl`, texto 16 px, `min-w-0`. Dois lado a lado = classe `campos-2` (`globals.css`: 2 colunas iguais, 12 px; abaixo de 360 px vira uma coluna).
 
 ## Cuidados e Cartão de Vacina
 - Aba Cuidados (`components/cuidados/`): Cartão de Vacina no topo + lembretes agrupados por tipo (próxima data, frequência, última vez). Tocar abre detalhes, editar e histórico. Carrega o histórico inteiro do pet.

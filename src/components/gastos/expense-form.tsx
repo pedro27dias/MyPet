@@ -14,6 +14,7 @@ import { TextField } from "../ui/fields";
 import { Sheet } from "../ui/sheet";
 import { useToast } from "../ui/toast";
 import { EXPENSE_ORDER, expenseMeta } from "./expense-meta";
+import { CampoData } from "../ui/campo-data";
 
 /**
  * Lançar (ou corrigir) um gasto: valor, categoria (padrão ou criada), data, descrição, quem pagou
@@ -200,8 +201,8 @@ function ExpenseForm({ expense, preset, onDone }: { expense: Expense | null; pre
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <TextField label="Data" type="date" value={date} max={todayStr()} onChange={(v) => v && setDate(v)} />
+      <div className="campos-2">
+        <CampoData label="Data" value={date} max={todayStr()} onChange={(v) => v && setDate(v)} />
         <TextField label="Descrição (opcional)" value={note} onChange={setNote} placeholder="Ex.: saco 15 kg" />
       </div>
 

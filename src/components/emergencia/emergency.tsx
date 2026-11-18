@@ -302,7 +302,7 @@ function ClinicForm({ pet, onDone }: { pet: Pet; onDone: () => void }) {
     <div className="space-y-4 pb-2">
       <TextField label="Nome" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="Ex.: Hospital Veterinário 24h" />
       <TextField label="Endereço" value={form.address ?? ""} onChange={(v) => setForm({ ...form, address: v })} placeholder="Rua, número, bairro, cidade" />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="campos-2">
         <TextField label="Telefone" type="tel" inputMode="tel" value={form.phone ?? ""} onChange={(v) => setForm({ ...form, phone: v })} />
         <TextField label="WhatsApp" type="tel" inputMode="tel" value={form.whatsapp ?? ""} onChange={(v) => setForm({ ...form, whatsapp: v })} placeholder="Se for outro" />
       </div>

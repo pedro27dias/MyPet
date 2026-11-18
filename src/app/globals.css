@@ -172,6 +172,22 @@ body {
   }
 }
 
+/* Dois campos lado a lado: colunas iguais, 12px entre elas; em telas < 360px, um embaixo do outro. */
+.campos-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+.campos-2 > * {
+  min-width: 0;
+}
+@media (max-width: 359px) {
+  .campos-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* Impressão do cartão de vacina (PDF): só o cartão aparece. */
 @media print {
   body * {

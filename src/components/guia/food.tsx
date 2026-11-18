@@ -236,7 +236,7 @@ function AteSomething({ steps }: { steps: string[] }) {
       </ol>
       <div className="mt-4 space-y-2 rounded-2xl bg-card p-3">
         <p className="text-sm font-bold text-forest">Anote para mostrar ao veterinário</p>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="campos-2">
           <TextField label="O que comeu" value={what} onChange={setWhat} placeholder="Ex.: chocolate" />
           <TextField label="Quanto" value={amount} onChange={setAmount} placeholder="Ex.: meia barra" />
         </div>

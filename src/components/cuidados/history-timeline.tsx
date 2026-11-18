@@ -14,6 +14,7 @@ import { Button } from "../ui/button";
 import { TextField } from "../ui/fields";
 import { Sheet } from "../ui/sheet";
 import { useToast } from "../ui/toast";
+import { CampoData } from "../ui/campo-data";
 
 /*
  * Histórico (aba Cuidados): tudo o que já foi feito (ou pulado), do mais recente ao mais antigo,
@@ -307,10 +308,7 @@ function RecordForm({ record, care, onDone }: { record: CareRecord; care: Care; 
         {record.editedBy && <Row k="Editado por" v={`${nameOf(record.editedBy)}${record.editedAt ? ` em ${fmtDate(record.editedAt)}` : ""}`} />}
       </dl>
       {done && (
-        <div className="grid grid-cols-[1fr_auto] gap-3">
-          <TextField label="Data" type="date" value={date} max={todayStr()} onChange={(v) => v && setDate(v)} />
-          <TextField label="Hora" type="time" value={time} onChange={(v) => v && setTime(v)} />
-        </div>
+        <CampoData label="Quando foi feito" value={date} time={time} onTimeChange={setTime} max={todayStr()} onChange={(v) => v && setDate(v)} />
       )}
       <TextField label="Observação" multiline value={note} onChange={setNote} placeholder="Ex.: comeu bem depois, sem reação" />
       {error && <p className="rounded-2xl bg-danger-soft px-4 py-3 text-sm font-semibold text-danger">{error}</p>}
@@ -337,9 +335,9 @@ function ExportSheet({ open, onClose, first, onExport }: { open: boolean; onClos
     <Sheet open={open} onClose={onClose} title="Exportar histórico">
       <div className="space-y-4 pb-2">
         <p className="text-muted">Resumo para levar ao veterinário. Usa o filtro e a busca escolhidos. Na tela de impressão, escolha “Salvar como PDF”.</p>
-        <div className="grid grid-cols-2 gap-3">
-          <TextField label="De" type="date" value={from} max={to} onChange={(v) => v && setFrom(v)} />
-          <TextField label="Até" type="date" value={to} max={todayStr()} onChange={(v) => v && setTo(v)} />
+        <div className="campos-2">
+          <CampoData label="De" value={from} max={to} onChange={(v) => v && setFrom(v)} />
+          <CampoData label="Até" value={to} min={from} max={todayStr()} onChange={(v) => v && setTo(v)} />
         </div>
         <Button size="lg" className="w-full" onClick={() => onExport(from, to)}>
           <FileDown size={18} /> Gerar PDF

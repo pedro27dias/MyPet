@@ -11,6 +11,7 @@ import { Button } from "../ui/button";
 import { Pills, TextField } from "../ui/fields";
 import { Sheet } from "../ui/sheet";
 import type { AlreadyDone } from "./use-task-actions";
+import { CampoData } from "../ui/campo-data";
 
 /** Opções de uma tarefa: adiar, pular (motivo), editar, mudar horário, desfazer e histórico. */
 export function TaskMenuSheet({
@@ -243,10 +244,7 @@ function EditTimeForm({ record, onSave }: { record: CareRecord; onSave: (r: Care
   const [day, setDay] = useState(toDateStr(base));
   return (
     <div className="space-y-4 pb-2">
-      <div className="grid grid-cols-2 gap-3">
-        <TextField label="Dia" type="date" value={day} onChange={(v) => v && setDay(v)} max={toDateStr(new Date())} />
-        <TextField label="Hora" type="time" value={time} onChange={(v) => v && setTime(v)} className="[&_input]:text-xl [&_input]:font-extrabold" />
-      </div>
+      <CampoData label="Quando foi feito" value={day} time={time} onTimeChange={setTime} onChange={(v) => v && setDay(v)} max={toDateStr(new Date())} />
       <Button size="lg" className="w-full" onClick={() => onSave(record, atTime(day, time))}>
         Salvar horário
       </Button>

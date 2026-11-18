@@ -10,6 +10,7 @@ import { isCat, vaccinesFor, type Answers, type FleaMethod } from "@/lib/onboard
 import type { FelvTest, FoodType, Freq, Lifestyle, Origin, OtherAnimal, Size, Species } from "@/lib/types";
 import { FleaSafetyNote } from "../care/flea-safety";
 import { BigOptions, Choice, Pills, Stepper, TextField, TimeList, YesNo } from "../ui/fields";
+import { CampoData } from "../ui/campo-data";
 
 /*
  * Perguntas do cadastro. Cada uma é uma tela. "auto" = avança sozinha ao escolher.
@@ -189,13 +190,7 @@ function FelvStep({ a, set, next }: StepProps) {
         />
       ))}
       {tested && (
-        <TextField
-          label="Quando fez o teste? (se souber)"
-          type="date"
-          value={a.felv.date}
-          max={new Date().toISOString().slice(0, 10)}
-          onChange={(v) => set({ felv: { ...a.felv, date: v } })}
-        />
+        <CampoData label="Quando fez o teste? (se souber)" value={a.felv.date} max={new Date().toISOString().slice(0, 10)} optional onChange={(v) => set({ felv: { ...a.felv, date: v } })} />
       )}
       {a.felv.test === "positivo" && (
         <p className="rounded-2xl bg-olive-soft px-4 py-3 text-sm text-forest">
@@ -339,13 +334,7 @@ function AgeStep({ a, set }: StepProps) {
         onChange={(v) => set({ birthMode: v })}
       />
       {a.birthMode === "data" ? (
-        <TextField
-          type="date"
-          value={a.birth}
-          max={new Date().toISOString().slice(0, 10)}
-          onChange={(v) => set({ birth: v })}
-          className="[&_input]:h-16 [&_input]:text-xl [&_input]:font-bold"
-        />
+        <CampoData value={a.birth} max={new Date().toISOString().slice(0, 10)} optional emptyText="Escolher a data" onChange={(v) => set({ birth: v })} />
       ) : (
         <div className="grid grid-cols-2 gap-3">
           <Stepper label={a.ageYears === 1 ? "ano" : "anos"} value={a.ageYears} max={25} onChange={(v) => set({ ageYears: v, ageAnswered: true })} />
@@ -507,9 +496,9 @@ function MedStep({ a, set, next }: StepProps) {
               <TimeList times={m.times} onChange={(t) => setMed({ times: t })} />
             )}
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <TextField label="Começa em" type="date" value={m.start} onChange={(v) => setMed({ start: v })} />
-            {m.freq !== "unica" && <TextField label="Termina em" type="date" value={m.end} onChange={(v) => setMed({ end: v })} />}
+          <div className="campos-2">
+            <CampoData label="Começa em" value={m.start} onChange={(v) => setMed({ start: v })} />
+            {m.freq !== "unica" && <CampoData label="Termina em" kind="por" optional emptyText="Contínuo" base={m.start} value={m.end} onChange={(v) => setMed({ end: v })} />}
           </div>
           {m.freq !== "unica" && <p className="px-1 text-sm text-muted">Deixe &quot;Termina em&quot; vazio se for contínuo.</p>}
         </div>
@@ -529,13 +518,7 @@ function VaccinesStep({ a, set }: StepProps) {
             <Choice selected={ans.done} onClick={toggle} title={v.label} hint={v.hint || undefined} className="border-0 bg-transparent" />
             {ans.done && (
               <div className="px-4 pb-4">
-                <TextField
-                  label="Última dose (se souber)"
-                  type="date"
-                  value={ans.last}
-                  max={new Date().toISOString().slice(0, 10)}
-                  onChange={(d) => set({ vaccines: { ...a.vaccines, [v.key]: { ...ans, last: d } } })}
-                />
+                <CampoData label="Última dose (se souber)" value={ans.last} max={new Date().toISOString().slice(0, 10)} optional onChange={(d) => set({ vaccines: { ...a.vaccines, [v.key]: { ...ans, last: d } } })} />
               </div>
             )}
           </div>
@@ -548,13 +531,7 @@ function VaccinesStep({ a, set }: StepProps) {
 function DewormerStep({ a, set }: StepProps) {
   return (
     <div className="space-y-4">
-      <TextField
-        label="Data aproximada"
-        type="date"
-        value={a.dewormer.last}
-        max={new Date().toISOString().slice(0, 10)}
-        onChange={(v) => set({ dewormer: { ...a.dewormer, last: v } })}
-      />
+      <CampoData label="Data aproximada" value={a.dewormer.last} max={new Date().toISOString().slice(0, 10)} optional onChange={(v) => set({ dewormer: { ...a.dewormer, last: v } })} />
       <TextField
         label="Produto (opcional)"
         value={a.dewormer.product}
@@ -589,11 +566,11 @@ function FleaStep({ a, set }: StepProps) {
         <Choice key={f.v} selected={a.flea.method === f.v} onClick={() => set({ flea: { ...a.flea, method: f.v } })} icon={f.icon} title={f.label} />
       ))}
       {a.flea.method && a.flea.method !== "nenhuma" && (
-        <TextField
+        <CampoData
           label={a.flea.method === "coleira" ? "Quando trocou a coleira?" : "Última aplicação"}
-          type="date"
           value={a.flea.last}
           max={new Date().toISOString().slice(0, 10)}
+          optional
           onChange={(v) => set({ flea: { ...a.flea, last: v } })}
         />
       )}

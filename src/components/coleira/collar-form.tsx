@@ -25,6 +25,7 @@ import { AnimatedCheck } from "../shared/animated-check";
 import { Button } from "../ui/button";
 import { Pills, Stepper, TextField } from "../ui/fields";
 import { useToast } from "../ui/toast";
+import { CampoData } from "../ui/campo-data";
 
 const OUTRA = "__outra__";
 
@@ -201,16 +202,7 @@ export function CollarForm({ initial, onDone }: { initial: Care; onDone: () => v
       {houseCat && <Alert tone="warn">{HOUSE_CAT_TEXT}</Alert>}
       {otherFlea && isNew && <Alert tone="warn">{OVERLAP_TEXT}</Alert>}
 
-      <label className="block">
-        <span className="mb-1 block px-1 text-sm font-bold text-muted">Colocou em</span>
-        <input
-          type="date"
-          value={placed}
-          max={todayStr()}
-          onChange={(e) => e.target.value && setPlaced(e.target.value)}
-          className="h-13 w-full rounded-2xl border-2 border-line bg-card px-4 font-bold text-fg outline-none focus:border-primary"
-        />
-      </label>
+      <CampoData label="Colocou em" value={placed} max={todayStr()} onChange={(v) => v && setPlaced(v)} />
 
       <Field label="Duração">
         <Stepper label={months === 1 ? "mês" : "meses"} value={months} min={1} max={12} onChange={setMonths} />

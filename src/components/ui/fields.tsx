@@ -2,6 +2,7 @@
 
 import { Check, Minus, Plus, X } from "lucide-react";
 import type { InputHTMLAttributes, ReactNode } from "react";
+import { CampoHora } from "./campo-data";
 
 /** Campos grandes e fáceis de tocar, usados no cadastro e nos formulários. */
 
@@ -19,10 +20,10 @@ export function TextField({
   multiline?: boolean;
 } & Omit<InputHTMLAttributes<HTMLInputElement>, "onChange" | "value">) {
   const cls =
-    "w-full rounded-2xl border-2 border-line bg-card px-4 text-fg outline-none transition placeholder:text-faint focus:border-primary";
+    "w-full min-w-0 rounded-2xl border-2 border-line bg-card px-4 text-base text-fg outline-none transition placeholder:text-faint focus:border-primary";
   return (
-    <label className={`block ${className}`}>
-      {label && <span className="mb-1 block px-1 text-sm font-bold text-muted">{label}</span>}
+    <label className={`block min-w-0 ${className}`}>
+      {label && <span className="mb-1 block truncate px-1 text-sm font-bold text-muted">{label}</span>}
       {multiline ? (
         <textarea
           value={value}
@@ -183,14 +184,8 @@ export function TimeList({ times, onChange }: { times: string[]; onChange: (t: s
   return (
     <div className="flex flex-wrap gap-2">
       {times.map((t, i) => (
-        <span key={i} className="flex items-center gap-1 rounded-2xl border-2 border-line bg-card pl-3">
-          <input
-            type="time"
-            value={t}
-            onChange={(e) => onChange(times.map((x, j) => (j === i ? e.target.value : x)))}
-            className="h-11 bg-transparent font-bold outline-none"
-            aria-label={`Horário ${i + 1}`}
-          />
+        <span key={i} className="flex items-center gap-1">
+          <CampoHora compact label={undefined} value={t} onChange={(v) => onChange(times.map((x, j) => (j === i ? v : x)))} />
           {times.length > 1 && (
             <button
               type="button"
@@ -207,7 +202,7 @@ export function TimeList({ times, onChange }: { times: string[]; onChange: (t: s
         <button
           type="button"
           onClick={() => onChange([...times, nextTime(times)])}
-          className="flex h-12 items-center gap-1 rounded-2xl border-2 border-dashed border-line px-3 font-bold text-primary"
+          className="flex h-13 items-center gap-1 rounded-2xl border-2 border-dashed border-line px-3 font-bold text-primary"
         >
           <Plus size={16} /> Horário
         </button>
