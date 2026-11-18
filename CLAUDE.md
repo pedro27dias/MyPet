@@ -17,8 +17,8 @@ O dono **não programa**: explique em português simples, sem termos técnicos, 
 | 5 | Notificações push (no horário, para todos os tutores; aviso quando alguém conclui) + PWA instalável completa | ✅ (variáveis na Vercel e SQL 004 rodado; cron do Supabase respondendo 200 — conferir em `net._http_response`) |
 | 6 | Publicar na Vercel | ✅ https://my-pet-orcin.vercel.app (conta Vercel da pedro27dias, projeto `my-pet`; publica sozinho a cada push no `main`; variáveis `NEXT_PUBLIC_SUPABASE_*` em Production; cron diário `/api/manter-ativo` em `vercel.json` mantém o Supabase acordado) |
 | 7 | Suporte a gatos (ver seção "Gatos") | ✅ (SQL 005 rodado) |
-| 8 | Coleira, data "Daqui a…", calendário do mês e Histórico (ver seção "Coleira, datas e histórico") | ✅ código (falta rodar `006_coleira_historico.sql`) |
-| 9 | Nova navegação, banho e tosa, prontuário, aba Gastos nova, plano de saúde, Central de Emergência e guia de alimentação (ver seção "Etapa 9") | ✅ código (falta rodar `006` e `007` no Supabase) |
+| 8 | Coleira, data "Daqui a…", calendário do mês e Histórico (ver seção "Coleira, datas e histórico") | ✅ (SQL 006 rodado) |
+| 9 | Nova navegação, banho e tosa, prontuário, aba Gastos nova, plano de saúde, Central de Emergência e guia de alimentação (ver seção "Etapa 9") | ✅ (SQL 006 e 007 rodados) |
 
 ## Etapa 9
 - **Navegação**: Início | Cuidados | (+) | Gastos | Guia (`tab-nav.tsx`). Perfil do pet (`/pet`) abre pela foto no Início ("Perfil"); abas Perfil | Saúde (plano + contatos de emergência) | Tutores. Botão **SOS** coral no topo do Início → `/emergencia`.
